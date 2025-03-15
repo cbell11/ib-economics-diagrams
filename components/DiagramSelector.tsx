@@ -55,7 +55,7 @@ export default function DiagramSelector({ onSelect }: DiagramSelectorProps) {
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">{diagram.label}</h3>
                 <p className="text-sm text-gray-600 flex-1">{diagram.description}</p>
                 <div className="mt-4 text-blue-600 text-sm font-medium">
-                  Click to create →
+                  Click to create &rarr;
                 </div>
               </button>
             ))}

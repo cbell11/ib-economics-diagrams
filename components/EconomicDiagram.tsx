@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { DiagramSettings, defaultSettings } from '../types/diagram';
+import type { Stage } from 'konva/lib/Stage';
 
 const defaultLabels = {
   'supply-demand': {
@@ -29,7 +30,10 @@ const DiagramControls = dynamic(() => import('./DiagramControls'), { ssr: false 
 interface EconomicDiagramProps {
   type: 'supply-demand' | 'ppf' | 'cost-curves';
   title: string;
-  onSave: (data: any) => Promise<void>;
+}
+
+interface DiagramCanvasRef {
+  getStage: () => Stage | null;
 }
 
 // Loading placeholder component that's identical between server and client
@@ -57,9 +61,9 @@ const DownloadIcon = () => (
   </svg>
 );
 
-export default function EconomicDiagram({ type, title, onSave }: EconomicDiagramProps) {
+export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const stageRef = useRef<any>(null);
+  const stageRef = useRef<DiagramCanvasRef>(null);
   const [isClient, setIsClient] = useState(false);
   const [stageSize, setStageSize] = useState({ width: 600, height: 400 });
   const [showFormatDialog, setShowFormatDialog] = useState(false);
@@ -107,16 +111,14 @@ export default function EconomicDiagram({ type, title, onSave }: EconomicDiagram
   }, [type, isClient]);
 
   const handleDownload = (format: 'png' | 'jpg') => {
-    if (!stageRef.current) return;
-
-    // Get the stage node
-    const stage = stageRef.current.getStage();
+    const stage = stageRef.current?.getStage();
+    if (!stage) return;
     
     // Convert stage to dataURL with white background
     const dataURL = stage.toDataURL({
       pixelRatio: 2, // Higher quality
       mimeType: `image/${format}`,
-      backgroundColor: '#ffffff',
+      quality: 1,
       width: stage.width(),
       height: stage.height()
     });
@@ -157,7 +159,6 @@ export default function EconomicDiagram({ type, title, onSave }: EconomicDiagram
               <DiagramControls
                 settings={settings}
                 onUpdate={setSettings}
-                type={type}
               />
             )}
             <div className="mt-4">

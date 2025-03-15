@@ -1,15 +1,9 @@
 'use client';
 
-import { useEffect, useState, forwardRef } from 'react';
+import { useEffect, useState, forwardRef, RefObject, useRef, useImperativeHandle } from 'react';
 import { DiagramSettings } from '../types/diagram';
 import { Stage, Layer, Line, Text, Circle, Rect } from 'react-konva';
-
-// Loading component that uses Konva components
-const LoadingComponent = () => (
-  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-    <div>Loading...</div>
-  </div>
-);
+import Konva from 'konva';
 
 interface DiagramCanvasProps {
   settings: DiagramSettings;
@@ -17,7 +11,11 @@ interface DiagramCanvasProps {
   height: number;
 }
 
-const DiagramCanvas = forwardRef<any, DiagramCanvasProps>(({ settings, width, height }, ref) => {
+interface DiagramCanvasRef {
+  getStage: () => Konva.Stage | null;
+}
+
+const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settings, width, height }, ref) => {
   const [mounted, setMounted] = useState(false);
   const [showS2, setShowS2] = useState(false);
   const [showS3, setShowS3] = useState(false);
@@ -53,6 +51,12 @@ const DiagramCanvas = forwardRef<any, DiagramCanvasProps>(({ settings, width, he
     { color: '#B0C4DE', name: 'Light Steel Blue' },
     { color: '#FFA07A', name: 'Light Salmon' }
   ];
+
+  const stageRef = useRef<Konva.Stage>(null);
+
+  useImperativeHandle(ref, () => ({
+    getStage: () => stageRef.current
+  }));
 
   useEffect(() => {
     setMounted(true);
@@ -924,7 +928,7 @@ const DiagramCanvas = forwardRef<any, DiagramCanvasProps>(({ settings, width, he
       paddingLeft: '100px',
       paddingBottom: '40px'
     }}>
-      <Stage ref={ref} width={width + 200} height={height}>
+      <Stage ref={stageRef} width={width + 200} height={height}>
         {renderSupplyDemand()}
       </Stage>
       <div style={{ 

@@ -2,31 +2,12 @@
 
 import { DiagramSettings } from '../types/diagram';
 
-const defaultLabels = {
-  'supply-demand': {
-    title: 'Figure 1: Supply and Demand',
-    xAxis: 'Quantity',
-    yAxis: 'Price ($)',
-  },
-  'ppf': {
-    title: 'Figure 1: Production Possibility Frontier',
-    xAxis: 'Good X',
-    yAxis: 'Good Y',
-  },
-  'cost-curves': {
-    title: 'Figure 1: Cost Curves',
-    xAxis: 'Quantity',
-    yAxis: 'Cost ($)',
-  },
-} as const;
-
 interface DiagramControlsProps {
   onUpdate: (updates: DiagramSettings) => void;
   settings: DiagramSettings;
-  type: 'supply-demand' | 'ppf' | 'cost-curves';
 }
 
-export default function DiagramControls({ onUpdate, settings, type }: DiagramControlsProps) {
+export default function DiagramControls({ onUpdate, settings }: DiagramControlsProps) {
   const handleChange = (field: keyof DiagramSettings, value: number | string) => {
     onUpdate({ ...settings, [field]: value });
   };

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { APIError } from 'openai';
 
 // Validate environment variables
 if (!process.env.OPENAI_API_KEY) {
@@ -74,42 +75,45 @@ export async function POST(request: Request) {
         diagramType: normalizedType as 'supply-demand' | 'ppf' | 'cost-curves'
       });
 
-    } catch (openaiError: any) {
-      console.error('OpenAI API Error:', {
-        error: openaiError,
-        message: openaiError.message,
-        response: openaiError.response?.data,
-        status: openaiError.response?.status
-      });
+    } catch (openaiError: unknown) {
+      if (openaiError instanceof APIError || openaiError instanceof Error) {
+        console.error('OpenAI API Error:', {
+          error: openaiError,
+          message: openaiError.message,
+          response: openaiError instanceof APIError ? openaiError.response?.data : undefined,
+          status: openaiError instanceof APIError ? openaiError.response?.status : undefined
+        });
 
-      if (openaiError.response?.status === 401) {
-        return NextResponse.json(
-          { error: 'Invalid API key or unauthorized access' },
-          { status: 401 }
-        );
+        if (openaiError instanceof APIError) {
+          if (openaiError.response?.status === 401) {
+            return NextResponse.json(
+              { error: 'Invalid API key or unauthorized access' },
+              { status: 401 }
+            );
+          }
+
+          if (openaiError.response?.status === 429) {
+            return NextResponse.json(
+              { error: 'Rate limit exceeded' },
+              { status: 429 }
+            );
+          }
+        }
       }
-
-      if (openaiError.response?.status === 429) {
-        return NextResponse.json(
-          { error: 'Rate limit exceeded' },
-          { status: 429 }
-        );
-      }
-
-      throw openaiError; // Re-throw to be caught by outer catch
+      throw openaiError;
     }
 
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     console.error('General Error in analyze-prompt:', {
       error,
-      message: error.message,
-      stack: error.stack
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
     });
 
     return NextResponse.json(
       { 
-        error: 'Failed to process the prompt: ' + (error.message || 'Unknown error'),
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        error: 'Failed to process the prompt: ' + (error instanceof Error ? error.message : 'Unknown error'),
+        details: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.stack : undefined : undefined
       },
       { status: 500 }
     );

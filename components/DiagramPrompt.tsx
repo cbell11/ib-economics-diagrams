@@ -39,9 +39,9 @@ export default function DiagramPrompt({ onDiagramTypeSelect }: DiagramPromptProp
       }
 
       onDiagramTypeSelect(data.diagramType, prompt);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error in handleSubmit:', err);
-      setError(err.message || 'Failed to process your request. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to process your request. Please try again.');
     } finally {
       setIsLoading(false);
     }

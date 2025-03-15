@@ -22,7 +22,16 @@ export default function DiagramPage() {
     setSelectedDiagram(null);
   };
 
-  const handleSave = async (data: any) => {
+  const handleSave = async (data: { 
+    type: 'supply-demand' | 'ppf' | 'cost-curves';
+    title: string;
+    elements: Array<{
+      id: string;
+      type: string;
+      position: { x: number; y: number };
+      data: Record<string, unknown>;
+    }>;
+  }) => {
     // TODO: Implement save functionality
     console.log('Saving diagram:', data);
   };
