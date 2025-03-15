@@ -1,0 +1,10 @@
+{
+  "extends": "next/core-web-vitals",
+  "rules": {
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-unused-vars": ["error", { 
+      "varsIgnorePattern": "^(LoadingComponent|defaultLabels|type|onSave)$"
+    }],
+    "react/no-unescaped-entities": "off"
+  }
+} 

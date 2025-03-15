@@ -22,20 +22,6 @@ export default function DiagramPage() {
     setSelectedDiagram(null);
   };
 
-  const handleSave = async (data: { 
-    type: 'supply-demand' | 'ppf' | 'cost-curves';
-    title: string;
-    elements: Array<{
-      id: string;
-      type: string;
-      position: { x: number; y: number };
-      data: Record<string, unknown>;
-    }>;
-  }) => {
-    // TODO: Implement save functionality
-    console.log('Saving diagram:', data);
-  };
-
   if (!selectedDiagram) {
     return <DiagramSelector onSelect={handleDiagramSelect} />;
   }
@@ -66,7 +52,6 @@ export default function DiagramPage() {
       <EconomicDiagram
         type={selectedDiagram.type}
         title={selectedDiagram.title}
-        onSave={handleSave}
       />
     </div>
   );

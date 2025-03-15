@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { APIError } from 'openai';
 
 // Validate environment variables
 if (!process.env.OPENAI_API_KEY) {
@@ -11,6 +10,11 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   dangerouslyAllowBrowser: true // Add this to allow browser usage
 });
+
+type APIErrorResponse = {
+  status?: number;
+  data?: unknown;
+};
 
 export async function POST(request: Request) {
   try {
@@ -75,35 +79,32 @@ export async function POST(request: Request) {
         diagramType: normalizedType as 'supply-demand' | 'ppf' | 'cost-curves'
       });
 
-    } catch (openaiError: unknown) {
-      if (openaiError instanceof APIError || openaiError instanceof Error) {
+    } catch (error: unknown) {
+      if (error instanceof OpenAI.APIError) {
         console.error('OpenAI API Error:', {
-          error: openaiError,
-          message: openaiError.message,
-          response: openaiError instanceof APIError ? openaiError.response?.data : undefined,
-          status: openaiError instanceof APIError ? openaiError.response?.status : undefined
+          error,
+          message: error.message,
+          status: error.status
         });
 
-        if (openaiError instanceof APIError) {
-          if (openaiError.response?.status === 401) {
-            return NextResponse.json(
-              { error: 'Invalid API key or unauthorized access' },
-              { status: 401 }
-            );
-          }
+        if (error.status === 401) {
+          return NextResponse.json(
+            { error: 'Invalid API key or unauthorized access' },
+            { status: 401 }
+          );
+        }
 
-          if (openaiError.response?.status === 429) {
-            return NextResponse.json(
-              { error: 'Rate limit exceeded' },
-              { status: 429 }
-            );
-          }
+        if (error.status === 429) {
+          return NextResponse.json(
+            { error: 'Rate limit exceeded' },
+            { status: 429 }
+          );
         }
       }
-      throw openaiError;
+      throw error;
     }
 
-  } catch (error: Error | unknown) {
+  } catch (error: unknown) {
     console.error('General Error in analyze-prompt:', {
       error,
       message: error instanceof Error ? error.message : 'Unknown error',
