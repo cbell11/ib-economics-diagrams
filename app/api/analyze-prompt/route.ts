@@ -11,11 +11,6 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true // Add this to allow browser usage
 });
 
-type APIErrorResponse = {
-  status?: number;
-  data?: unknown;
-};
-
 export async function POST(request: Request) {
   try {
     // Validate request body

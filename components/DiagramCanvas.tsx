@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, forwardRef, RefObject, useRef, useImperativeHandle } from 'react';
+import { useEffect, useState, forwardRef, useRef, useImperativeHandle } from 'react';
 import { DiagramSettings } from '../types/diagram';
 import { Stage, Layer, Line, Text, Circle, Rect } from 'react-konva';
 import Konva from 'konva';
