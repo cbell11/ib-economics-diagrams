@@ -39,10 +39,30 @@ const LoadingPlaceholder = () => (
   </div>
 );
 
+// Download icon component
+const DownloadIcon = () => (
+  <svg 
+    className="w-5 h-5 mr-2" 
+    fill="none" 
+    stroke="currentColor" 
+    viewBox="0 0 24 24" 
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+      strokeWidth={2} 
+      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+    />
+  </svg>
+);
+
 export default function EconomicDiagram({ type, title, onSave }: EconomicDiagramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<any>(null);
   const [isClient, setIsClient] = useState(false);
   const [stageSize, setStageSize] = useState({ width: 600, height: 400 });
+  const [showFormatDialog, setShowFormatDialog] = useState(false);
   const [settings, setSettings] = useState<DiagramSettings>({
     ...defaultSettings,
     title: defaultLabels[type].title,
@@ -86,6 +106,34 @@ export default function EconomicDiagram({ type, title, onSave }: EconomicDiagram
     }));
   }, [type, isClient]);
 
+  const handleDownload = (format: 'png' | 'jpg') => {
+    if (!stageRef.current) return;
+
+    // Get the stage node
+    const stage = stageRef.current.getStage();
+    
+    // Convert stage to dataURL with white background
+    const dataURL = stage.toDataURL({
+      pixelRatio: 2, // Higher quality
+      mimeType: `image/${format}`,
+      backgroundColor: '#ffffff',
+      width: stage.width(),
+      height: stage.height()
+    });
+    
+    // Create a link element
+    const link = document.createElement('a');
+    const fileName = `${settings.title || 'Economic Diagram'} - EconGraph Pro by Diploma Collective.${format}`;
+    link.download = fileName.replace(/[/\\?%*:|"<>]/g, '-'); // Remove invalid filename characters
+    link.href = dataURL;
+    
+    // Append to document, click, and remove
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setShowFormatDialog(false);
+  };
+
   // Base layout that's identical between server and client
   return (
     <div className="space-y-4">
@@ -96,7 +144,7 @@ export default function EconomicDiagram({ type, title, onSave }: EconomicDiagram
             <LoadingPlaceholder />
           ) : (
             <DiagramCanvas
-              type={type}
+              ref={stageRef}
               settings={settings}
               width={stageSize.width}
               height={stageSize.height}
@@ -114,16 +162,63 @@ export default function EconomicDiagram({ type, title, onSave }: EconomicDiagram
             )}
             <div className="mt-4">
               <button
-                onClick={() => onSave({ type, settings, data: 'TODO: Add diagram data' })}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                onClick={() => setShowFormatDialog(true)}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center justify-center"
                 disabled={!isClient}
               >
-                Save Diagram
+                <DownloadIcon />
+                Download Diagram
               </button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Format Selection Dialog */}
+      {showFormatDialog && (
+        <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
+          <div 
+            className="bg-white rounded-lg p-6 shadow-xl max-w-sm w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Choose File Format</h3>
+              <button
+                onClick={() => setShowFormatDialog(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <svg 
+                  className="w-5 h-5" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => handleDownload('png')}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex-1"
+              >
+                PNG
+              </button>
+              <button
+                onClick={() => handleDownload('jpg')}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex-1"
+              >
+                JPG
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

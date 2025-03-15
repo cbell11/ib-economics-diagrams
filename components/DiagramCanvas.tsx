@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, forwardRef } from 'react';
 import { DiagramSettings } from '../types/diagram';
-import { Stage, Layer, Line, Text, Circle } from 'react-konva';
+import { Stage, Layer, Line, Text, Circle, Rect } from 'react-konva';
 
 // Loading component that uses Konva components
 const LoadingComponent = () => (
@@ -17,7 +17,7 @@ interface DiagramCanvasProps {
   height: number;
 }
 
-export default function DiagramCanvas({ settings, width, height }: DiagramCanvasProps) {
+const DiagramCanvas = forwardRef<any, DiagramCanvasProps>(({ settings, width, height }, ref) => {
   const [mounted, setMounted] = useState(false);
   const [showS2, setShowS2] = useState(false);
   const [showS3, setShowS3] = useState(false);
@@ -358,6 +358,34 @@ export default function DiagramCanvas({ settings, width, height }: DiagramCanvas
 
     return (
       <Layer>
+        {/* White Background */}
+        <Rect
+          x={0}
+          y={0}
+          width={width + 200}
+          height={height}
+          fill="white"
+        />
+
+        {/* Watermarks */}
+        {[0.25, 0.5, 0.75].map((position) => (
+          <Text
+            key={position}
+            text="Copyright Diploma Collective"
+            x={width * position}
+            y={height / 2}
+            fontSize={16}
+            fill="#4195FF"
+            opacity={0.2}
+            rotation={-45}
+            width={300}
+            align="center"
+            verticalAlign="middle"
+            offsetX={150}
+            offsetY={0}
+          />
+        ))}
+        
         {/* Title */}
         <Text
           text={settings.title || ""}
@@ -896,7 +924,7 @@ export default function DiagramCanvas({ settings, width, height }: DiagramCanvas
       paddingLeft: '100px',
       paddingBottom: '40px'
     }}>
-      <Stage width={width + 200} height={height}>
+      <Stage ref={ref} width={width + 200} height={height}>
         {renderSupplyDemand()}
       </Stage>
       <div style={{ 
@@ -1375,4 +1403,8 @@ export default function DiagramCanvas({ settings, width, height }: DiagramCanvas
       </div>
     </div>
   );
-} 
+});
+
+DiagramCanvas.displayName = 'DiagramCanvas';
+
+export default DiagramCanvas; 
