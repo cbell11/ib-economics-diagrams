@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 interface DiagramSelectorProps {
-  onSelect: (type: 'supply-demand' | 'ppf' | 'cost-curves', title: string) => void;
+  onSelect: (type: 'supply-demand', title: string) => void;
 }
 
 const diagramTypes = [
@@ -11,17 +11,7 @@ const diagramTypes = [
     id: 'supply-demand',
     label: 'Supply & Demand',
     description: 'Create a supply and demand diagram to analyze market equilibrium, price changes, and elasticity.'
-  },
-  {
-    id: 'ppf',
-    label: 'Production Possibility Frontier',
-    description: 'Illustrate the production trade-offs between two goods and analyze opportunity costs.'
-  },
-  {
-    id: 'cost-curves',
-    label: 'Cost Curves',
-    description: 'Visualize different types of costs and their relationships in production.'
-  },
+  }
 ] as const;
 
 export default function DiagramSelector({ onSelect }: DiagramSelectorProps) {
@@ -48,7 +38,7 @@ export default function DiagramSelector({ onSelect }: DiagramSelectorProps) {
       </div>
 
       {/* Diagram type selection */}
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-1 gap-6">
         {diagramTypes.map((diagram) => (
           <button
             key={diagram.id}

@@ -1,18 +1,15 @@
+export type ElasticityType = 'unitary' | 'relatively-elastic' | 'relatively-inelastic' | 'perfectly-elastic' | 'perfectly-inelastic';
+
 export interface DiagramSettings {
-  lineThickness: number;
-  fontSize: number;
-  primaryColor: string;
-  secondaryColor: string;
+  title?: string;
   xAxisLabel: string;
   yAxisLabel: string;
-  title?: string;
-  supplyElasticity: 'unitary' | 'relatively-elastic' | 'relatively-inelastic' | 'perfectly-elastic' | 'perfectly-inelastic';
-  demandElasticity: 'unitary' | 'relatively-elastic' | 'relatively-inelastic' | 'perfectly-elastic' | 'perfectly-inelastic';
-  supplyPosition: number;
-  demandPosition: number;
-  lineLength: number;
-  supplyLineLength: number;
-  demandLineLength: number;
+  primaryColor: string;
+  secondaryColor: string;
+  lineThickness: number;
+  fontSize: number;
+  supplyElasticity: ElasticityType;
+  demandElasticity: ElasticityType;
 }
 
 const defaultSettings: DiagramSettings = {
@@ -24,12 +21,7 @@ const defaultSettings: DiagramSettings = {
   yAxisLabel: 'Price',
   title: 'Figure 1: Supply and Demand',
   supplyElasticity: 'unitary',
-  demandElasticity: 'unitary',
-  supplyPosition: 70,
-  demandPosition: 70,
-  lineLength: 90,
-  supplyLineLength: 80,
-  demandLineLength: 80
+  demandElasticity: 'unitary'
 };
 
 export { defaultSettings }; 

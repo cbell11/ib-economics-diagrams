@@ -12,20 +12,47 @@ const LoadingComponent = () => (
 );
 
 interface DiagramCanvasProps {
-  type: 'supply-demand' | 'ppf' | 'cost-curves';
   settings: DiagramSettings;
   width: number;
   height: number;
 }
 
-export default function DiagramCanvas({ type, settings, width, height }: DiagramCanvasProps) {
+export default function DiagramCanvas({ settings, width, height }: DiagramCanvasProps) {
   const [mounted, setMounted] = useState(false);
   const [showS2, setShowS2] = useState(false);
   const [showS3, setShowS3] = useState(false);
   const [showP2, setShowP2] = useState(false);
   const [showP3, setShowP3] = useState(false);
+  const [showShading, setShowShading] = useState(false);
+  const [showSubsidyShading, setShowSubsidyShading] = useState(false);
+  const [showWelfareLoss, setShowWelfareLoss] = useState(false);
+  const [showPriceCeiling, setShowPriceCeiling] = useState(false);
+  const [showPriceFloor, setShowPriceFloor] = useState(false);
+  const [priceCeilingHeight, setPriceCeilingHeight] = useState(40);
+  const [priceFloorHeight, setPriceFloorHeight] = useState(-40);
+  const [welfareLossColor, setWelfareLossColor] = useState('#666666'); // Dark gray default
+  const [welfareLossFillOpacity, setWelfareLossFillOpacity] = useState(0.3);
+  const [welfareLossStrokeOpacity, setWelfareLossStrokeOpacity] = useState(0.5);
+  const [shadingColor, setShadingColor] = useState('#90EE90'); // Light green default
+  const [subsidyShadingColor, setSubsidyShadingColor] = useState('#90EE90'); // Light green default
+  const [fillOpacity, setFillOpacity] = useState(0.3);
+  const [strokeOpacity, setStrokeOpacity] = useState(0.5);
+  const [subsidyFillOpacity, setSubsidyFillOpacity] = useState(0.3);
+  const [subsidyStrokeOpacity, setSubsidyStrokeOpacity] = useState(0.5);
   const [s2Distance, setS2Distance] = useState(40);
   const [s3Distance, setS3Distance] = useState(40);
+
+  const pastelColors = [
+    { color: '#666666', name: 'Gray' },
+    { color: '#90EE90', name: 'Light Green' },
+    { color: '#FFB6C1', name: 'Light Pink' },
+    { color: '#87CEEB', name: 'Sky Blue' },
+    { color: '#DDA0DD', name: 'Plum' },
+    { color: '#F0E68C', name: 'Khaki' },
+    { color: '#98FB98', name: 'Pale Green' },
+    { color: '#B0C4DE', name: 'Light Steel Blue' },
+    { color: '#FFA07A', name: 'Light Salmon' }
+  ];
 
   useEffect(() => {
     setMounted(true);
@@ -355,6 +382,227 @@ export default function DiagramCanvas({ type, settings, width, height }: Diagram
           strokeWidth={settings.lineThickness * 0.75}
         />
 
+        {/* Shaded region for subsidy cost - placed first to be behind everything */}
+        {showS3 && showP3 && showSubsidyShading && shiftedDownEquilibrium && (() => {
+          const supplySlope = (supplyPoints[3] - supplyPoints[1]) / (supplyPoints[2] - supplyPoints[0]);
+          const supplyYIntercept = supplyPoints[1] - supplySlope * supplyPoints[0];
+          const intersectionY = supplySlope * shiftedDownEquilibrium.x + supplyYIntercept;
+          
+          return (
+            <Line
+              points={[
+                160, shiftedDownEquilibrium.y,
+                shiftedDownEquilibrium.x, shiftedDownEquilibrium.y,
+                shiftedDownEquilibrium.x, intersectionY,
+                160, intersectionY
+              ]}
+              closed={true}
+              fill={subsidyShadingColor + Math.round(subsidyFillOpacity * 255).toString(16).padStart(2, '0')}
+              stroke={subsidyShadingColor + Math.round(subsidyStrokeOpacity * 255).toString(16).padStart(2, '0')}
+              strokeWidth={1}
+            />
+          );
+        })()}
+
+        {/* Shaded region for tax revenue */}
+        {showS2 && showP2 && showShading && shiftedUpEquilibrium && (() => {
+          const supplySlope = (supplyPoints[3] - supplyPoints[1]) / (supplyPoints[2] - supplyPoints[0]);
+          const supplyYIntercept = supplyPoints[1] - supplySlope * supplyPoints[0];
+          const intersectionY = supplySlope * shiftedUpEquilibrium.x + supplyYIntercept;
+          
+          return (
+            <Line
+              points={[
+                160, shiftedUpEquilibrium.y,
+                shiftedUpEquilibrium.x, shiftedUpEquilibrium.y,
+                shiftedUpEquilibrium.x, intersectionY,
+                160, intersectionY
+              ]}
+              closed={true}
+              fill={shadingColor + Math.round(fillOpacity * 255).toString(16).padStart(2, '0')}
+              stroke={shadingColor + Math.round(strokeOpacity * 255).toString(16).padStart(2, '0')}
+              strokeWidth={1}
+            />
+          );
+        })()}
+
+        {/* Welfare loss triangle */}
+        {showS2 && showP2 && showWelfareLoss && shiftedUpEquilibrium && (() => {
+          const supplySlope = (supplyPoints[3] - supplyPoints[1]) / (supplyPoints[2] - supplyPoints[0]);
+          const supplyYIntercept = supplyPoints[1] - supplySlope * supplyPoints[0];
+          const intersectionY = supplySlope * shiftedUpEquilibrium.x + supplyYIntercept;
+          
+          return (
+            <Line
+              points={[
+                equilibrium.x, equilibrium.y,
+                shiftedUpEquilibrium.x, shiftedUpEquilibrium.y,
+                shiftedUpEquilibrium.x, intersectionY
+              ]}
+              closed={true}
+              fill={welfareLossColor + Math.round(welfareLossFillOpacity * 255).toString(16).padStart(2, '0')}
+              stroke={welfareLossColor + Math.round(welfareLossStrokeOpacity * 255).toString(16).padStart(2, '0')}
+              strokeWidth={1}
+            />
+          );
+        })()}
+
+        {/* Price Ceiling Line */}
+        {showPriceCeiling && (
+          <>
+            <Line
+              points={[
+                160,
+                equilibrium.y + priceCeilingHeight,
+                width - 90,
+                equilibrium.y + priceCeilingHeight
+              ]}
+              stroke="#000000"
+              strokeWidth={settings.lineThickness}
+            />
+            <Text
+              text="Pc"
+              x={125}
+              y={equilibrium.y + priceCeilingHeight - 8}
+              fontSize={settings.fontSize}
+              fill="#000000"
+            />
+            <Text
+              text="Pc"
+              x={width - 80}
+              y={equilibrium.y + priceCeilingHeight - 8}
+              fontSize={settings.fontSize}
+              fill="#000000"
+            />
+            {/* Calculate intersections with S and D */}
+            {(() => {
+              const ceilingY = equilibrium.y + priceCeilingHeight;
+              
+              // Calculate supply intersection
+              const supplySlope = (supplyPoints[3] - supplyPoints[1]) / (supplyPoints[2] - supplyPoints[0]);
+              const supplyYIntercept = supplyPoints[1] - supplySlope * supplyPoints[0];
+              const supplyIntersectX = (ceilingY - supplyYIntercept) / supplySlope;
+              
+              // Calculate demand intersection
+              const demandSlope = (demandPoints[3] - demandPoints[1]) / (demandPoints[2] - demandPoints[0]);
+              const demandYIntercept = demandPoints[1] - demandSlope * demandPoints[0];
+              const demandIntersectX = (ceilingY - demandYIntercept) / demandSlope;
+              
+              return (
+                <>
+                  {/* Supply intersection vertical line */}
+                  <Line
+                    points={[supplyIntersectX, ceilingY, supplyIntersectX, height - 70]}
+                    stroke="#666666"
+                    strokeWidth={1}
+                    dash={[4, 4]}
+                  />
+                  <Text
+                    text="Qs"
+                    x={supplyIntersectX - 8}
+                    y={height - 55}
+                    fontSize={settings.fontSize}
+                    fill="#000000"
+                  />
+                  
+                  {/* Demand intersection vertical line */}
+                  <Line
+                    points={[demandIntersectX, ceilingY, demandIntersectX, height - 70]}
+                    stroke="#666666"
+                    strokeWidth={1}
+                    dash={[4, 4]}
+                  />
+                  <Text
+                    text="Qd"
+                    x={demandIntersectX - 8}
+                    y={height - 55}
+                    fontSize={settings.fontSize}
+                    fill="#000000"
+                  />
+                </>
+              );
+            })()}
+          </>
+        )}
+
+        {/* Price Floor Line */}
+        {showPriceFloor && (
+          <>
+            <Line
+              points={[
+                160,
+                equilibrium.y + priceFloorHeight,
+                width - 90,
+                equilibrium.y + priceFloorHeight
+              ]}
+              stroke="#000000"
+              strokeWidth={settings.lineThickness}
+            />
+            <Text
+              text="Pf"
+              x={125}
+              y={equilibrium.y + priceFloorHeight - 8}
+              fontSize={settings.fontSize}
+              fill="#000000"
+            />
+            <Text
+              text="Pf"
+              x={width - 80}
+              y={equilibrium.y + priceFloorHeight - 8}
+              fontSize={settings.fontSize}
+              fill="#000000"
+            />
+            {/* Calculate intersections with S and D */}
+            {(() => {
+              const floorY = equilibrium.y + priceFloorHeight;
+              
+              // Calculate supply intersection
+              const supplySlope = (supplyPoints[3] - supplyPoints[1]) / (supplyPoints[2] - supplyPoints[0]);
+              const supplyYIntercept = supplyPoints[1] - supplySlope * supplyPoints[0];
+              const supplyIntersectX = (floorY - supplyYIntercept) / supplySlope;
+              
+              // Calculate demand intersection
+              const demandSlope = (demandPoints[3] - demandPoints[1]) / (demandPoints[2] - demandPoints[0]);
+              const demandYIntercept = demandPoints[1] - demandSlope * demandPoints[0];
+              const demandIntersectX = (floorY - demandYIntercept) / demandSlope;
+              
+              return (
+                <>
+                  {/* Supply intersection vertical line */}
+                  <Line
+                    points={[supplyIntersectX, floorY, supplyIntersectX, height - 70]}
+                    stroke="#666666"
+                    strokeWidth={1}
+                    dash={[4, 4]}
+                  />
+                  <Text
+                    text="Qs"
+                    x={supplyIntersectX - 8}
+                    y={height - 55}
+                    fontSize={settings.fontSize}
+                    fill="#000000"
+                  />
+                  
+                  {/* Demand intersection vertical line */}
+                  <Line
+                    points={[demandIntersectX, floorY, demandIntersectX, height - 70]}
+                    stroke="#666666"
+                    strokeWidth={1}
+                    dash={[4, 4]}
+                  />
+                  <Text
+                    text="Qd"
+                    x={demandIntersectX - 8}
+                    y={height - 55}
+                    fontSize={settings.fontSize}
+                    fill="#000000"
+                  />
+                </>
+              );
+            })()}
+          </>
+        )}
+
         {/* Original Supply curve */}
         <Line
           points={supplyPoints}
@@ -593,7 +841,7 @@ export default function DiagramCanvas({ type, settings, width, height }: Diagram
           wordBreak="keep-all"
         />
         <Text
-          text="S₁"
+          text={!showS2 && !showS3 ? "S" : "S₁"}
           x={supplyPoints[2] + 20}
           y={Math.min(supplyPoints[1], supplyPoints[3]) - 20}
           fontSize={settings.fontSize}
@@ -628,359 +876,503 @@ export default function DiagramCanvas({ type, settings, width, height }: Diagram
     );
   };
 
-  const renderPPF = () => (
-    <Layer>
-      {/* X and Y axes */}
-      <Line
-        points={[50, height - 50, width - 50, height - 50]}
-        stroke="#000000"
-        strokeWidth={settings.lineThickness * 0.75}
-      />
-      <Line
-        points={[50, 50, 50, height - 50]}
-        stroke="#000000"
-        strokeWidth={settings.lineThickness * 0.75}
-      />
-
-      {/* Axis arrows */}
-      <Line
-        points={[
-          width - 50, height - 50,
-          width - 60, height - 55,
-          width - 50, height - 50,
-          width - 60, height - 45
-        ]}
-        stroke="#000000"
-        strokeWidth={settings.lineThickness * 0.75}
-      />
-      <Line
-        points={[
-          50, 50,
-          45, 60,
-          50, 50,
-          55, 60
-        ]}
-        stroke="#000000"
-        strokeWidth={settings.lineThickness * 0.75}
-      />
-
-      {/* PPF curve */}
-      <Line
-        points={[
-          50, height - 50,
-          width * 0.2, height * 0.3,
-          width * 0.5, height * 0.15,
-          width - 50, 50
-        ]}
-        stroke={settings.primaryColor}
-        strokeWidth={settings.lineThickness}
-      />
-
-      {/* Labels */}
-      <Text
-        text="Good A"
-        x={15}
-        y={height / 2}
-        rotation={-90}
-        fontSize={settings.fontSize}
-        fill="#000000"
-      />
-      <Text
-        text="Good B"
-        x={width / 2 - 30}
-        y={height - 35}
-        fontSize={settings.fontSize}
-        fill="#000000"
-      />
-      <Text
-        text="PPF"
-        x={width - 80}
-        y={60}
-        fontSize={settings.fontSize}
-        fill={settings.primaryColor}
-      />
-    </Layer>
-  );
-
-  const renderCostCurves = () => (
-    <Layer>
-      {/* X and Y axes */}
-      <Line
-        points={[50, height - 50, width - 50, height - 50]}
-        stroke="#000000"
-        strokeWidth={settings.lineThickness * 0.75}
-      />
-      <Line
-        points={[50, 50, 50, height - 50]}
-        stroke="#000000"
-        strokeWidth={settings.lineThickness * 0.75}
-      />
-
-      {/* Axis arrows */}
-      <Line
-        points={[
-          width - 50, height - 50,
-          width - 60, height - 55,
-          width - 50, height - 50,
-          width - 60, height - 45
-        ]}
-        stroke="#000000"
-        strokeWidth={settings.lineThickness * 0.75}
-      />
-      <Line
-        points={[
-          50, 50,
-          45, 60,
-          50, 50,
-          55, 60
-        ]}
-        stroke="#000000"
-        strokeWidth={settings.lineThickness * 0.75}
-      />
-
-      {/* Average Total Cost curve */}
-      <Line
-        points={[
-          50, height - 100,
-          width * 0.25, height - 150,
-          width * 0.5, height - 200,
-          width * 0.75, height - 150,
-          width - 50, height - 100
-        ]}
-        stroke={settings.primaryColor}
-        strokeWidth={settings.lineThickness}
-      />
-
-      {/* Marginal Cost curve */}
-      <Line
-        points={[
-          50, height - 150,
-          width * 0.25, height - 200,
-          width * 0.5, height - 100,
-          width * 0.75, height - 50,
-          width - 50, 50
-        ]}
-        stroke={settings.secondaryColor}
-        strokeWidth={settings.lineThickness}
-      />
-
-      {/* Labels */}
-      <Text
-        text="Cost"
-        x={15}
-        y={height / 2}
-        rotation={-90}
-        fontSize={settings.fontSize}
-        fill="#000000"
-      />
-      <Text
-        text="Quantity"
-        x={width / 2 - 30}
-        y={height - 35}
-        fontSize={settings.fontSize}
-        fill="#000000"
-      />
-      <Text
-        text="ATC"
-        x={width - 80}
-        y={height - 160}
-        fontSize={settings.fontSize}
-        fill={settings.primaryColor}
-      />
-      <Text
-        text="MC"
-        x={width - 80}
-        y={60}
-        fontSize={settings.fontSize}
-        fill={settings.secondaryColor}
-      />
-    </Layer>
-  );
-
   if (!mounted) {
     return (
       <div style={{ 
-        width, 
-        height, 
-        backgroundColor: '#f0f0f0',
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center' 
+        width: width + 200, 
+        minHeight: height + 300,
+        paddingLeft: '100px',
+        paddingBottom: '40px'
       }}>
-        <div style={{ 
-          width: '40px', 
-          height: '40px', 
-          border: '4px solid #ccc',
-          borderTop: '4px solid #666',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite'
-        }} />
+        <div>Loading...</div>
       </div>
     );
   }
 
   return (
-    <div style={{ width: width + 200, height, paddingLeft: '100px' }}>
+    <div style={{ 
+      width: width + 200, 
+      minHeight: height + 300,
+      paddingLeft: '100px',
+      paddingBottom: '40px'
+    }}>
       <Stage width={width + 200} height={height}>
-        {type === 'supply-demand' && renderSupplyDemand()}
-        {type === 'ppf' && renderPPF()}
-        {type === 'cost-curves' && renderCostCurves()}
+        {renderSupplyDemand()}
       </Stage>
-      {type === 'supply-demand' && (
-        <div style={{ 
-          marginTop: '20px',
-          padding: '10px',
-          borderTop: '1px solid #e5e7eb'
-        }}>
-          <h3 style={{ 
-            fontSize: '16px',
+      <div style={{ 
+        marginTop: '20px', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: '10px',
+        maxWidth: width - 100
+      }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ 
+            fontSize: '16px', 
             fontWeight: 'bold',
-            marginBottom: '10px'
+            color: '#333',
+            marginBottom: '4px'
           }}>
             Interventions
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-              <button
-                onClick={() => setShowS2(!showS2)}
-                style={{
-                  padding: '6px 12px',
-                  backgroundColor: showS2 ? '#2563eb' : '#e5e7eb',
-                  color: showS2 ? 'white' : '#374151',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  fontWeight: '500',
-                  width: '80px'
-                }}
-              >
-                Tax
-              </button>
-              <button
-                onClick={() => setShowS3(!showS3)}
-                style={{
-                  padding: '6px 12px',
-                  backgroundColor: showS3 ? '#2563eb' : '#e5e7eb',
-                  color: showS3 ? 'white' : '#374151',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  fontWeight: '500',
-                  width: '80px'
-                }}
-              >
-                Subsidy
-              </button>
-            </div>
-            {(showS2 || showS3) && (
+          </div>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <button
+              onClick={() => setShowS2(!showS2)}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: showS2 ? '#4CAF50' : '#f0f0f0',
+                color: showS2 ? 'white' : 'black',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Tax
+            </button>
+            <button
+              onClick={() => setShowS3(!showS3)}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: showS3 ? '#4CAF50' : '#f0f0f0',
+                color: showS3 ? 'white' : 'black',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Subsidy
+            </button>
+            <button
+              onClick={() => setShowPriceCeiling(!showPriceCeiling)}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: showPriceCeiling ? '#4CAF50' : '#f0f0f0',
+                color: showPriceCeiling ? 'white' : 'black',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Price Ceiling
+            </button>
+            <button
+              onClick={() => setShowPriceFloor(!showPriceFloor)}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: showPriceFloor ? '#4CAF50' : '#f0f0f0',
+                color: showPriceFloor ? 'white' : 'black',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Price Floor
+            </button>
+          </div>
+        </div>
+        {showPriceCeiling && (
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', marginLeft: '20px' }}>
+            <input
+              type="range"
+              min="0"
+              max="150"
+              value={priceCeilingHeight}
+              onChange={(e) => setPriceCeilingHeight(parseInt(e.target.value))}
+              style={{ width: '150px' }}
+            />
+          </div>
+        )}
+        {showPriceFloor && (
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', marginLeft: '20px' }}>
+            <input
+              type="range"
+              min="-150"
+              max="0"
+              value={priceFloorHeight}
+              onChange={(e) => setPriceFloorHeight(parseInt(e.target.value))}
+              style={{ width: '150px' }}
+            />
+          </div>
+        )}
+        {showS2 && (
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', marginLeft: '20px' }}>
+            <button
+              onClick={() => setShowP2(!showP2)}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: showP2 ? '#4CAF50' : '#f0f0f0',
+                color: showP2 ? 'white' : 'black',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Show Tax Distance
+            </button>
+            <input
+              type="range"
+              min="0"
+              max="150"
+              value={s2Distance}
+              onChange={(e) => setS2Distance(parseInt(e.target.value))}
+              style={{ width: '150px' }}
+            />
+            {showP2 && (
               <div style={{ 
                 display: 'flex', 
-                flexDirection: 'column', 
+                flexDirection: 'column',
                 gap: '8px',
-                backgroundColor: '#f3f4f6',
-                padding: '10px',
-                borderRadius: '4px',
-                marginTop: '4px'
+                padding: '4px 12px',
+                backgroundColor: '#f5f5f5',
+                borderRadius: '4px'
               }}>
-                {showS2 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <label style={{ 
-                      fontSize: '14px', 
-                      color: '#374151',
-                      width: '120px'
-                    }}>
-                      Tax Shift:
-                    </label>
-                    <input
-                      type="range"
-                      min="10"
-                      max="150"
-                      value={s2Distance}
-                      onChange={(e) => setS2Distance(Number(e.target.value))}
-                      style={{ flex: 1 }}
-                    />
-                    <span style={{ 
-                      fontSize: '14px', 
-                      color: '#374151',
-                      width: '40px'
-                    }}>
-                      {s2Distance}
-                    </span>
-                  </div>
-                )}
-                {showS3 && (
-                  <>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <label style={{ 
-                        fontSize: '14px', 
-                        color: '#374151',
-                        width: '120px'
-                      }}>
-                        Subsidy Shift:
-                      </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    gap: '8px',
+                    padding: '8px',
+                    backgroundColor: '#ffffff',
+                    borderRadius: '4px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <input
-                        type="range"
-                        min="10"
-                        max="150"
-                        value={s3Distance}
-                        onChange={(e) => setS3Distance(Number(e.target.value))}
-                        style={{ flex: 1 }}
-                      />
-                      <span style={{ 
-                        fontSize: '14px', 
-                        color: '#374151',
-                        width: '40px'
-                      }}>
-                        {s3Distance}
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '8px' }}>
-                      <button
-                        onClick={() => setShowP3(!showP3)}
+                        type="checkbox"
+                        checked={showShading}
+                        onChange={(e) => setShowShading(e.target.checked)}
+                        id="showTaxRevenue"
                         style={{
-                          padding: '6px 12px',
-                          backgroundColor: showP3 ? '#2563eb' : '#e5e7eb',
-                          color: showP3 ? 'white' : '#374151',
-                          border: 'none',
-                          borderRadius: '4px',
+                          width: '16px',
+                          height: '16px',
+                          cursor: 'pointer'
+                        }}
+                      />
+                      <label
+                        htmlFor="showTaxRevenue"
+                        style={{
                           cursor: 'pointer',
-                          transition: 'all 0.2s',
-                          fontWeight: '500',
+                          userSelect: 'none',
                           fontSize: '14px'
                         }}
                       >
-                        Show Subsidy Distance
-                      </button>
+                        Show Tax/Government Revenue
+                      </label>
                     </div>
-                  </>
-                )}
-                {showS2 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '8px' }}>
-                    <button
-                      onClick={() => setShowP2(!showP2)}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: showP2 ? '#2563eb' : '#e5e7eb',
-                        color: showP2 ? 'white' : '#374151',
-                        border: 'none',
+                    {showShading && (
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px',
+                        backgroundColor: '#f8f8f8',
                         borderRadius: '4px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        fontWeight: '500',
-                        fontSize: '14px'
-                      }}
-                    >
-                      Show Tax Distance
-                    </button>
+                        marginLeft: '24px'
+                      }}>
+                        <div style={{
+                          display: 'flex',
+                          gap: '4px',
+                          flexWrap: 'wrap',
+                          maxWidth: '225px'
+                        }}>
+                          {pastelColors.map((color) => (
+                            <button
+                              key={color.color}
+                              onClick={() => setShadingColor(color.color)}
+                              style={{
+                                width: '24px',
+                                height: '24px',
+                                backgroundColor: color.color,
+                                border: color.color === shadingColor ? '2px solid #000' : '1px solid #ccc',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                padding: '0'
+                              }}
+                              title={color.name}
+                            />
+                          ))}
+                        </div>
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px'
+                        }}>
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            fontSize: '12px'
+                          }}>
+                            <label>Fill:</label>
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              value={fillOpacity * 100}
+                              onChange={(e) => setFillOpacity(parseInt(e.target.value) / 100)}
+                              style={{ width: '80px' }}
+                            />
+                          </div>
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            fontSize: '12px'
+                          }}>
+                            <label>Border:</label>
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              value={strokeOpacity * 100}
+                              onChange={(e) => setStrokeOpacity(parseInt(e.target.value) / 100)}
+                              style={{ width: '80px' }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    gap: '8px',
+                    padding: '8px',
+                    backgroundColor: '#ffffff',
+                    borderRadius: '4px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <input
+                        type="checkbox"
+                        checked={showWelfareLoss}
+                        onChange={(e) => setShowWelfareLoss(e.target.checked)}
+                        id="showWelfareLoss"
+                        style={{
+                          width: '16px',
+                          height: '16px',
+                          cursor: 'pointer'
+                        }}
+                      />
+                      <label
+                        htmlFor="showWelfareLoss"
+                        style={{
+                          cursor: 'pointer',
+                          userSelect: 'none',
+                          fontSize: '14px'
+                        }}
+                      >
+                        Show Welfare Loss
+                      </label>
+                    </div>
+                    {showWelfareLoss && (
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px',
+                        backgroundColor: '#f8f8f8',
+                        borderRadius: '4px',
+                        marginLeft: '24px'
+                      }}>
+                        <div style={{
+                          display: 'flex',
+                          gap: '4px',
+                          flexWrap: 'wrap',
+                          maxWidth: '225px'
+                        }}>
+                          {pastelColors.map((color) => (
+                            <button
+                              key={color.color}
+                              onClick={() => setWelfareLossColor(color.color)}
+                              style={{
+                                width: '24px',
+                                height: '24px',
+                                backgroundColor: color.color,
+                                border: color.color === welfareLossColor ? '2px solid #000' : '1px solid #ccc',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                padding: '0'
+                              }}
+                              title={color.name}
+                            />
+                          ))}
+                        </div>
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px'
+                        }}>
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            fontSize: '12px'
+                          }}>
+                            <label>Fill:</label>
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              value={welfareLossFillOpacity * 100}
+                              onChange={(e) => setWelfareLossFillOpacity(parseInt(e.target.value) / 100)}
+                              style={{ width: '80px' }}
+                            />
+                          </div>
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            fontSize: '12px'
+                          }}>
+                            <label>Border:</label>
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              value={welfareLossStrokeOpacity * 100}
+                              onChange={(e) => setWelfareLossStrokeOpacity(parseInt(e.target.value) / 100)}
+                              style={{ width: '80px' }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        {showS3 && (
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', marginLeft: '20px' }}>
+            <button
+              onClick={() => setShowP3(!showP3)}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: showP3 ? '#4CAF50' : '#f0f0f0',
+                color: showP3 ? 'white' : 'black',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Show Subsidy Distance
+            </button>
+            <input
+              type="range"
+              min="0"
+              max="150"
+              value={s3Distance}
+              onChange={(e) => setS3Distance(parseInt(e.target.value))}
+              style={{ width: '150px' }}
+            />
+            {showP3 && (
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '8px',
+                padding: '4px 12px',
+                backgroundColor: '#f5f5f5',
+                borderRadius: '4px'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={showSubsidyShading}
+                  onChange={(e) => setShowSubsidyShading(e.target.checked)}
+                  id="showSubsidyCost"
+                  style={{
+                    width: '16px',
+                    height: '16px',
+                    cursor: 'pointer'
+                  }}
+                />
+                <label
+                  htmlFor="showSubsidyCost"
+                  style={{
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                    fontSize: '14px'
+                  }}
+                >
+                  Show Subsidy Cost
+                </label>
+                {showSubsidyShading && (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginLeft: '8px',
+                    padding: '4px',
+                    backgroundColor: '#ffffff',
+                    borderRadius: '4px'
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      gap: '4px',
+                      flexWrap: 'wrap',
+                      maxWidth: '200px'
+                    }}>
+                      {pastelColors.map((color) => (
+                        <button
+                          key={color.color}
+                          onClick={() => setSubsidyShadingColor(color.color)}
+                          style={{
+                            width: '24px',
+                            height: '24px',
+                            backgroundColor: color.color,
+                            border: color.color === subsidyShadingColor ? '2px solid #000' : '1px solid #ccc',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            padding: '0'
+                          }}
+                          title={color.name}
+                        />
+                      ))}
+                    </div>
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px'
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '12px'
+                      }}>
+                        <label>Fill:</label>
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={subsidyFillOpacity * 100}
+                          onChange={(e) => setSubsidyFillOpacity(parseInt(e.target.value) / 100)}
+                          style={{ width: '80px' }}
+                        />
+                      </div>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '12px'
+                      }}>
+                        <label>Border:</label>
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={subsidyStrokeOpacity * 100}
+                          onChange={(e) => setSubsidyStrokeOpacity(parseInt(e.target.value) / 100)}
+                          style={{ width: '80px' }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
             )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 } 

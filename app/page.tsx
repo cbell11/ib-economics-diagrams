@@ -10,11 +10,11 @@ const EconomicDiagram = dynamic(() => import('../components/EconomicDiagram'), {
 
 export default function DiagramPage() {
   const [selectedDiagram, setSelectedDiagram] = useState<{
-    type: 'supply-demand' | 'ppf' | 'cost-curves';
+    type: 'supply-demand';
     title: string;
   } | null>(null);
 
-  const handleDiagramSelect = (type: 'supply-demand' | 'ppf' | 'cost-curves', title: string) => {
+  const handleDiagramSelect = (type: 'supply-demand', title: string) => {
     setSelectedDiagram({ type, title });
   };
 
