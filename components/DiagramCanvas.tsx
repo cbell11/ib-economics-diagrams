@@ -387,6 +387,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
             verticalAlign="middle"
             offsetX={150}
             offsetY={0}
+            name="watermark"
           />
         ))}
         

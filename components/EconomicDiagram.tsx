@@ -235,10 +235,10 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
       }
 
       // Remove watermark by hiding it temporarily
-      const watermarkNode = stage.findOne('.watermark');
-      if (watermarkNode) {
-        watermarkNode.visible(false);
-      }
+      const watermarks = stage.find('.watermark, [name="watermark"]');
+      watermarks.forEach(watermark => {
+        watermark.visible(false);
+      });
 
       // Create the download with watermark removed
       const dataURL = stage.toDataURL({
@@ -248,9 +248,9 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
       });
 
       // Restore watermark visibility
-      if (watermarkNode) {
-        watermarkNode.visible(true);
-      }
+      watermarks.forEach(watermark => {
+        watermark.visible(true);
+      });
       
       const link = document.createElement('a');
       const fileName = `${settings.title || 'Economic Diagram'} - EconGraph Pro by Diploma Collective.${format}`;
