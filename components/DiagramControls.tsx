@@ -15,32 +15,32 @@ export default function DiagramControls({ onUpdate, settings }: DiagramControlsP
   return (
     <div className="space-y-6 p-6 bg-white rounded-lg shadow">
       <div className="space-y-4">
-        <h4 className="text-sm font-medium text-gray-700">Title</h4>
+        <h4 className="text-sm font-medium text-gray-900">Title</h4>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-900 mb-1">
             Diagram Title
           </label>
           <input
             type="text"
             value={settings.title || ""}
             onChange={(e) => handleChange('title', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 bg-white text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Enter diagram title"
           />
         </div>
       </div>
 
       <div className="space-y-4">
-        <h4 className="text-sm font-medium text-gray-700">Elasticity</h4>
+        <h4 className="text-sm font-medium text-gray-900">Elasticity</h4>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-900 mb-1">
               Supply Elasticity
             </label>
             <select
               value={settings.supplyElasticity}
               onChange={(e) => handleChange('supplyElasticity', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 bg-white text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="unitary">Unitary</option>
               <option value="relatively-elastic">Relatively Elastic</option>
@@ -51,13 +51,13 @@ export default function DiagramControls({ onUpdate, settings }: DiagramControlsP
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-900 mb-1">
               Demand Elasticity
             </label>
             <select
               value={settings.demandElasticity}
               onChange={(e) => handleChange('demandElasticity', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 bg-white text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="unitary">Unitary</option>
               <option value="relatively-elastic">Relatively Elastic</option>
@@ -70,38 +70,38 @@ export default function DiagramControls({ onUpdate, settings }: DiagramControlsP
       </div>
 
       <div className="space-y-4">
-        <h4 className="text-sm font-medium text-gray-700">Axis Labels</h4>
+        <h4 className="text-sm font-medium text-gray-900">Axis Labels</h4>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-900 mb-1">
               Y-Axis Label
             </label>
             <input
               type="text"
               value={settings.yAxisLabel}
               onChange={(e) => handleChange('yAxisLabel', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 bg-white text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter Y-axis label"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-900 mb-1">
               X-Axis Label
             </label>
             <input
               type="text"
               value={settings.xAxisLabel}
               onChange={(e) => handleChange('xAxisLabel', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 bg-white text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter X-axis label"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-900 mb-1">
               Font Size
-              <span className="ml-2 text-xs text-gray-500">{settings.fontSize}px</span>
+              <span className="ml-2 text-xs text-gray-600">{settings.fontSize}px</span>
             </label>
             <input
               type="range"
@@ -117,11 +117,11 @@ export default function DiagramControls({ onUpdate, settings }: DiagramControlsP
       </div>
 
       <div className="space-y-4">
-        <h4 className="text-sm font-medium text-gray-700">Line Weight</h4>
+        <h4 className="text-sm font-medium text-gray-900">Line Weight</h4>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-900 mb-1">
             Line Thickness
-            <span className="ml-2 text-xs text-gray-500">{settings.lineThickness}px</span>
+            <span className="ml-2 text-xs text-gray-600">{settings.lineThickness}px</span>
           </label>
           <input
             type="range"

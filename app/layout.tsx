@@ -1,32 +1,27 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
-import ClientRootLayout from '../components/ClientRootLayout';
+import Header from '../components/Header';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "IB Economics Diagrams",
-  description: "Create and share IB Economics diagrams",
+  title: "EconGraph Pro by Diploma Collective",
+  description: "Create professional IB Economics diagrams in seconds",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <ClientRootLayout>{children}</ClientRootLayout>
+      <body className={inter.className}>
+        <Header />
+        <main className="mt-8">
+          {children}
+        </main>
       </body>
     </html>
   );

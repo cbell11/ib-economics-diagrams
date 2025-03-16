@@ -185,7 +185,10 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ format: selectedFormat }),
+        body: JSON.stringify({ 
+          format: selectedFormat,
+          amount: 399 // Amount in cents (3.99 USD)
+        }),
       });
 
       const { sessionId } = await response.json();
@@ -203,7 +206,7 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
   };
 
   const handleSubscription = () => {
-    window.location.href = 'https://diplomacollective.com/home/for-students/ib-economics/';
+    window.location.href = 'https://diplomacollective.com/register/econ-student-monthly/';
   };
 
   const downloadDiagram = async (format: 'png' | 'jpg') => {
@@ -368,12 +371,12 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
             </div>
 
             {/* Member Link */}
-            <div className="mt-6 text-center">
+            <div className="pt-4 text-center border-t mt-4">
               <a
                 href="https://diplomacollective.com/home/for-students/econgraph-pro/"
                 className="inline-flex items-center text-base font-medium text-[#4895ef] hover:text-[#ffc145] transition-colors duration-200"
               >
-                Already a member? Sign in here
+                Already a member? Sign in here to download now
                 <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
@@ -390,7 +393,7 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold">Choose Your Plan</h3>
+              <h3 className="text-xl font-semibold text-gray-900">Choose Your Plan</h3>
               <button
                 onClick={() => setShowPaymentDialog(false)}
                 className="text-gray-500 hover:text-gray-700 p-2"
@@ -410,70 +413,75 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
                 </svg>
               </button>
             </div>
-            <div className="space-y-4">
+
+            <div className="space-y-6">
+              {/* One-time Download */}
               <div className="p-4 border rounded-lg">
-                <h4 className="text-lg font-semibold mb-2">One-Time Download</h4>
-                <p className="text-gray-600 mb-4">Download this diagram in {selectedFormat?.toUpperCase()} format.</p>
-                <p className="text-2xl font-bold text-blue-600 mb-4">$4.99</p>
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">One-time Download</h4>
+                <p className="text-gray-600 mb-4">Perfect for quick, one-off diagrams</p>
                 <button
                   onClick={handleOneTimePayment}
-                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="w-full bg-[#32a567] text-white py-2 px-4 rounded-md hover:bg-[#2a8d57] transition-colors duration-200"
                 >
-                  Purchase Now
+                  Pay $3.99
                 </button>
                 <div className="mt-4 flex items-center justify-center">
-                  <Image 
+                  <Image
                     src="/Powered by Stripe - blurple-300x68-b3bf095.png"
-                    alt="Powered by Stripe" 
-                    width={300}
-                    height={68}
+                    alt="Powered by Stripe"
+                    width={100}
+                    height={32}
                     className="h-8 w-auto"
+                    priority
                   />
                 </div>
               </div>
-              <div className="p-4 border rounded-lg bg-gray-50">
-                <h4 className="text-lg font-semibold mb-2">Student Membership</h4>
-                <p className="text-gray-600 mb-4">Get unlimited access to all diagrams and resources.</p>
-                <p className="text-2xl font-bold text-blue-600 mb-4">$12.99/month</p>
+
+              {/* Student Membership */}
+              <div className="p-4 border rounded-lg">
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">Student Membership</h4>
+                <ul className="text-gray-600 mb-4 list-disc pl-5 space-y-1">
+                  <li>Unlimited access to EconGraph Pro</li>
+                  <li>Access to our Step-By-Step IA Guide</li>
+                  <li>IB Econ Power Review Pack included</li>
+                </ul>
                 <button
                   onClick={handleSubscription}
-                  className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  className="w-full bg-[#32a567] text-white py-2 px-4 rounded-md hover:bg-[#2a8d57] transition-colors duration-200"
                 >
-                  Subscribe Now
+                  Join for $12.99/month
                 </button>
                 <div className="mt-4 flex items-center justify-center space-x-6">
-                  <Image 
+                  <Image
                     src="/Powered by Stripe - blurple-300x68-b3bf095.png"
-                    alt="Powered by Stripe" 
-                    width={300}
-                    height={68}
-                    className="h-8 w-auto"
-                  />
-                  <Image 
-                    src="/paypal-logo.svg"
-                    alt="PayPal" 
+                    alt="Powered by Stripe"
                     width={100}
-                    height={26}
+                    height={32}
+                    className="h-8 w-auto"
+                    priority
+                  />
+                  <Image
+                    src="https://www.paypalobjects.com/webstatic/de_DE/i/de-pp-logo-100px.png"
+                    alt="PayPal Logo"
+                    width={100}
+                    height={24}
                     className="h-6 w-auto"
+                    priority
                   />
                 </div>
-                <p className="text-sm text-gray-500 mt-2">
-                  Access all IB Economics resources at Diploma Collective
-                </p>
               </div>
-              
-              {/* Member Sign In Link */}
-              <div className="pt-4 text-center border-t mt-4">
-                <a
-                  href="https://diplomacollective.com/home/for-students/econgraph-pro/"
-                  className="inline-flex items-center text-base font-medium text-[#4895ef] hover:text-[#ffc145] transition-colors duration-200"
-                >
-                  Already a member? Sign in here to download now
-                  <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                  </svg>
-                </a>
-              </div>
+            </div>
+
+            <div className="pt-4 text-center border-t mt-4">
+              <a
+                href="https://diplomacollective.com/home/for-students/econgraph-pro/"
+                className="inline-flex items-center text-base font-medium text-[#4895ef] hover:text-[#ffc145] transition-colors duration-200"
+              >
+                Already a member? Sign in here to download now
+                <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </a>
             </div>
           </div>
         </div>

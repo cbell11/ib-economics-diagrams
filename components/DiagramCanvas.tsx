@@ -949,32 +949,71 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
             Interventions
           </div>
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <button
-              onClick={() => setShowS2(!showS2)}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: showS2 ? '#4CAF50' : '#f0f0f0',
-                color: showS2 ? 'white' : 'black',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              Tax
-            </button>
-            <button
-              onClick={() => setShowS3(!showS3)}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: showS3 ? '#4CAF50' : '#f0f0f0',
-                color: showS3 ? 'white' : 'black',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              Subsidy
-            </button>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '8px',
+              padding: '4px 12px',
+              backgroundColor: '#f5f5f5',
+              borderRadius: '4px'
+            }}>
+              <input
+                type="checkbox"
+                checked={showS2}
+                onChange={(e) => setShowS2(e.target.checked)}
+                id="showS2"
+                style={{
+                  width: '16px',
+                  height: '16px',
+                  cursor: 'pointer',
+                  accentColor: '#4895ef'
+                }}
+              />
+              <label
+                htmlFor="showS2"
+                style={{
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                  fontSize: '14px',
+                  color: '#1f2937'
+                }}
+              >
+                Show S2 (Tax)
+              </label>
+            </div>
+
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '8px',
+              padding: '4px 12px',
+              backgroundColor: '#f5f5f5',
+              borderRadius: '4px'
+            }}>
+              <input
+                type="checkbox"
+                checked={showS3}
+                onChange={(e) => setShowS3(e.target.checked)}
+                id="showS3"
+                style={{
+                  width: '16px',
+                  height: '16px',
+                  cursor: 'pointer',
+                  accentColor: '#4895ef'
+                }}
+              />
+              <label
+                htmlFor="showS3"
+                style={{
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                  fontSize: '14px',
+                  color: '#1f2937'
+                }}
+              >
+                Show S3 (Subsidy)
+              </label>
+            </div>
             <button
               onClick={() => setShowPriceCeiling(!showPriceCeiling)}
               style={{
@@ -1077,7 +1116,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
                         style={{
                           width: '16px',
                           height: '16px',
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          accentColor: '#4895ef'
                         }}
                       />
                       <label
@@ -1085,7 +1125,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
                         style={{
                           cursor: 'pointer',
                           userSelect: 'none',
-                          fontSize: '14px'
+                          fontSize: '14px',
+                          color: '#1f2937'
                         }}
                       >
                         Show Tax/Government Revenue
@@ -1097,7 +1138,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
                         alignItems: 'center',
                         gap: '8px',
                         padding: '8px',
-                        backgroundColor: '#f8f8f8',
+                        backgroundColor: '#ffffff',
                         borderRadius: '4px',
                         marginLeft: '24px'
                       }}>
@@ -1135,14 +1176,14 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
                             gap: '8px',
                             fontSize: '12px'
                           }}>
-                            <label>Fill:</label>
+                            <label style={{ color: '#1f2937' }}>Fill:</label>
                             <input
                               type="range"
                               min="0"
                               max="100"
                               value={fillOpacity * 100}
                               onChange={(e) => setFillOpacity(parseInt(e.target.value) / 100)}
-                              style={{ width: '80px' }}
+                              style={{ width: '80px', accentColor: '#4895ef' }}
                             />
                           </div>
                           <div style={{
@@ -1151,14 +1192,14 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
                             gap: '8px',
                             fontSize: '12px'
                           }}>
-                            <label>Border:</label>
+                            <label style={{ color: '#1f2937' }}>Border:</label>
                             <input
                               type="range"
                               min="0"
                               max="100"
                               value={strokeOpacity * 100}
                               onChange={(e) => setStrokeOpacity(parseInt(e.target.value) / 100)}
-                              style={{ width: '80px' }}
+                              style={{ width: '80px', accentColor: '#4895ef' }}
                             />
                           </div>
                         </div>
@@ -1182,7 +1223,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
                         style={{
                           width: '16px',
                           height: '16px',
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          accentColor: '#4895ef'
                         }}
                       />
                       <label
@@ -1190,7 +1232,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
                         style={{
                           cursor: 'pointer',
                           userSelect: 'none',
-                          fontSize: '14px'
+                          fontSize: '14px',
+                          color: '#1f2937'
                         }}
                       >
                         Show Welfare Loss
@@ -1202,7 +1245,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
                         alignItems: 'center',
                         gap: '8px',
                         padding: '8px',
-                        backgroundColor: '#f8f8f8',
+                        backgroundColor: '#ffffff',
                         borderRadius: '4px',
                         marginLeft: '24px'
                       }}>
@@ -1240,14 +1283,14 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
                             gap: '8px',
                             fontSize: '12px'
                           }}>
-                            <label>Fill:</label>
+                            <label style={{ color: '#1f2937' }}>Fill:</label>
                             <input
                               type="range"
                               min="0"
                               max="100"
                               value={welfareLossFillOpacity * 100}
                               onChange={(e) => setWelfareLossFillOpacity(parseInt(e.target.value) / 100)}
-                              style={{ width: '80px' }}
+                              style={{ width: '80px', accentColor: '#4895ef' }}
                             />
                           </div>
                           <div style={{
@@ -1256,14 +1299,14 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
                             gap: '8px',
                             fontSize: '12px'
                           }}>
-                            <label>Border:</label>
+                            <label style={{ color: '#1f2937' }}>Border:</label>
                             <input
                               type="range"
                               min="0"
                               max="100"
                               value={welfareLossStrokeOpacity * 100}
                               onChange={(e) => setWelfareLossStrokeOpacity(parseInt(e.target.value) / 100)}
-                              style={{ width: '80px' }}
+                              style={{ width: '80px', accentColor: '#4895ef' }}
                             />
                           </div>
                         </div>
@@ -1315,7 +1358,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
                   style={{
                     width: '16px',
                     height: '16px',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    accentColor: '#4895ef'
                   }}
                 />
                 <label
@@ -1323,7 +1367,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
                   style={{
                     cursor: 'pointer',
                     userSelect: 'none',
-                    fontSize: '14px'
+                    fontSize: '14px',
+                    color: '#1f2937'
                   }}
                 >
                   Show Subsidy Cost
@@ -1372,14 +1417,14 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
                         gap: '8px',
                         fontSize: '12px'
                       }}>
-                        <label>Fill:</label>
+                        <label style={{ color: '#1f2937' }}>Fill:</label>
                         <input
                           type="range"
                           min="0"
                           max="100"
                           value={subsidyFillOpacity * 100}
                           onChange={(e) => setSubsidyFillOpacity(parseInt(e.target.value) / 100)}
-                          style={{ width: '80px' }}
+                          style={{ width: '80px', accentColor: '#4895ef' }}
                         />
                       </div>
                       <div style={{
@@ -1388,14 +1433,14 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
                         gap: '8px',
                         fontSize: '12px'
                       }}>
-                        <label>Border:</label>
+                        <label style={{ color: '#1f2937' }}>Border:</label>
                         <input
                           type="range"
                           min="0"
                           max="100"
                           value={subsidyStrokeOpacity * 100}
                           onChange={(e) => setSubsidyStrokeOpacity(parseInt(e.target.value) / 100)}
-                          style={{ width: '80px' }}
+                          style={{ width: '80px', accentColor: '#4895ef' }}
                         />
                       </div>
                     </div>

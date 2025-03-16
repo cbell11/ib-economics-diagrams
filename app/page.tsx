@@ -29,19 +29,6 @@ export default function DiagramPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50">
-      {/* Logo Section */}
-      <div className="w-full py-8 px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-center">
-          <Image
-            src="/diploma-collective-logo.png"
-            alt="Diploma Collective Logo"
-            width={200}
-            height={50}
-            className="h-8 w-auto"
-          />
-        </div>
-      </div>
-
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <button
