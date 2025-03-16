@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { DiagramSettings, defaultSettings } from '../types/diagram';
 import type { Stage } from 'konva/lib/Stage';
 import { loadStripe } from '@stripe/stripe-js';
+import { Dialog } from '@headlessui/react';
 
 const defaultLabels = {
   'supply-demand': {
@@ -300,7 +301,7 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
             <div className="mt-4">
               <button
                 onClick={() => setShowFormatDialog(true)}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center justify-center"
+                className="w-full px-4 py-2 bg-[#32a567] text-white rounded-lg hover:bg-[#2a8d57] transition-colors shadow-sm flex items-center justify-center"
                 disabled={!isClient}
               >
                 <DownloadIcon />
@@ -312,76 +313,57 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
       </div>
 
       {/* Format Selection Dialog */}
-      {showFormatDialog && (
-        <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
-          <div 
-            className="bg-white rounded-lg p-6 shadow-xl max-w-sm w-full mx-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Choose File Format</h3>
-              <button
-                onClick={() => setShowFormatDialog(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <svg 
-                  className="w-5 h-5" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-            {remainingDownloads !== null && (
-              <p className="text-sm text-gray-600 mb-4">
-                You have {remainingDownloads} downloads remaining this month.
-                {remainingDownloads === 0 && (
-                  <span className="block mt-2 text-red-600">
-                    You have reached your monthly download limit. Please contact support for additional downloads.
-                  </span>
-                )}
-              </p>
-            )}
-            <div className="flex gap-3 justify-center">
+      <Dialog
+        open={showFormatDialog}
+        onClose={() => setShowFormatDialog(false)}
+        className="relative z-50"
+      >
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="w-full max-w-md bg-white rounded-3xl p-8">
+            <Dialog.Title className="text-2xl font-bold text-gray-900 mb-6">
+              Choose Download Format
+            </Dialog.Title>
+            <div className="space-y-4">
               <button
                 onClick={() => handleDownload('png')}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex-1"
-                disabled={isCheckingMembership}
+                className="w-full flex items-center justify-between p-4 rounded-2xl bg-white hover:bg-gray-50 border border-gray-200 transition-colors duration-200"
               >
-                {isCheckingMembership ? (
-                  <div className="flex items-center justify-center">
-                    <div className="w-5 h-5 border-t-2 border-white rounded-full animate-spin mr-2" />
-                    Checking...
-                  </div>
-                ) : (
-                  'PNG'
-                )}
+                <div className="flex items-center">
+                  <span className="text-lg font-medium text-gray-900">PNG Format</span>
+                </div>
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </button>
               <button
                 onClick={() => handleDownload('jpg')}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex-1"
-                disabled={isCheckingMembership}
+                className="w-full flex items-center justify-between p-4 rounded-2xl bg-white hover:bg-gray-50 border border-gray-200 transition-colors duration-200"
               >
-                {isCheckingMembership ? (
-                  <div className="flex items-center justify-center">
-                    <div className="w-5 h-5 border-t-2 border-white rounded-full animate-spin mr-2" />
-                    Checking...
-                  </div>
-                ) : (
-                  'JPG'
-                )}
+                <div className="flex items-center">
+                  <span className="text-lg font-medium text-gray-900">JPG Format</span>
+                </div>
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </button>
             </div>
-          </div>
+
+            {/* Member Link */}
+            <div className="mt-6 text-center">
+              <a
+                href="https://diplomacollective.com/home/for-students/econgraph-pro/"
+                className="inline-flex items-center text-base font-medium text-[#4895ef] hover:text-[#ffc145] transition-colors duration-200"
+              >
+                Already a member? Sign in here
+                <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </a>
+            </div>
+          </Dialog.Panel>
         </div>
-      )}
+      </Dialog>
 
       {showPaymentDialog && (
         <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50 p-4">
@@ -421,6 +403,13 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
                 >
                   Purchase Now
                 </button>
+                <div className="mt-4 flex items-center justify-center">
+                  <img 
+                    src="https://cdn.brandfetch.io/idxAg10C0L/theme/dark/logo.svg?c=1dxbfHSJFAPEGdCLU4o5B"
+                    alt="Powered by Stripe" 
+                    className="h-8"
+                  />
+                </div>
               </div>
               <div className="p-4 border rounded-lg bg-gray-50">
                 <h4 className="text-lg font-semibold mb-2">Student Membership</h4>
@@ -432,9 +421,34 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
                 >
                   Subscribe Now
                 </button>
+                <div className="mt-4 flex items-center justify-center space-x-6">
+                  <img 
+                    src="https://cdn.brandfetch.io/idxAg10C0L/theme/dark/logo.svg?c=1dxbfHSJFAPEGdCLU4o5B"
+                    alt="Powered by Stripe" 
+                    className="h-8"
+                  />
+                  <img 
+                    src="https://www.paypalobjects.com/webstatic/de_DE/i/de-pp-logo-100px.png" 
+                    alt="PayPal" 
+                    className="h-6"
+                  />
+                </div>
                 <p className="text-sm text-gray-500 mt-2">
                   Access all IB Economics resources at Diploma Collective
                 </p>
+              </div>
+              
+              {/* Member Sign In Link */}
+              <div className="pt-4 text-center border-t mt-4">
+                <a
+                  href="https://diplomacollective.com/home/for-students/econgraph-pro/"
+                  className="inline-flex items-center text-base font-medium text-[#4895ef] hover:text-[#ffc145] transition-colors duration-200"
+                >
+                  Already a member? Sign in here to download now
+                  <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </a>
               </div>
             </div>
           </div>

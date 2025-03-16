@@ -8,37 +8,113 @@ const diagramTypes = [
   {
     id: 'supply-demand',
     label: 'Supply & Demand',
-    description: 'Create a supply and demand diagram to analyze market equilibrium, price changes, and elasticity.'
+    description: 'Create a supply and demand diagram to analyze market equilibrium, price changes, and elasticity.',
+    icon: (
+      <svg className="w-8 h-8 text-[#4895ef]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l6 6l4-4l8 8" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 16l6-6l4 4l8-8" />
+        <circle cx="21" cy="3" r="1" className="fill-[#4895ef]" />
+        <circle cx="3" cy="21" r="1" className="fill-[#4895ef]" />
+      </svg>
+    )
   }
 ] as const;
 
 export default function DiagramSelector({ onSelect }: DiagramSelectorProps) {
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-[#4195FF] mb-8">
-            Diploma Collective&apos;s EconGraph Pro
-          </h1>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50">
+      {/* Logo Section */}
+      <div className="w-full py-8 px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-center">
+          <img 
+            src="/diploma-collective-logo.png" 
+            alt="Diploma Collective Logo" 
+            className="h-16 w-auto"
+          />
         </div>
-        <div className="max-w-4xl mx-auto p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-8 text-center">Create Your Economic Diagram</h1>
-          
-          {/* Diagram type selection */}
-          <div className="grid md:grid-cols-1 gap-6">
-            {diagramTypes.map((diagram) => (
-              <button
-                key={diagram.id}
-                onClick={() => onSelect(diagram.id, 'Supply and Demand Diagram')}
-                className="flex flex-col p-6 bg-white rounded-lg shadow-sm border border-gray-200 hover:border-blue-500 hover:shadow-md transition-all text-left"
-              >
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{diagram.label}</h3>
-                <p className="text-sm text-gray-600 flex-1">{diagram.description}</p>
-                <div className="mt-4 text-blue-600 text-sm font-medium">
-                  Click to create &rarr;
-                </div>
-              </button>
-            ))}
+      </div>
+
+      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col lg:flex-row lg:space-x-12">
+          {/* Content Section - Left Side */}
+          <div className="lg:w-1/2 lg:pr-8">
+            <div className="mb-12">
+              <h1 className="text-5xl font-black text-[#4895ef] mb-6 tracking-tight">
+                EconGraph Pro
+              </h1>
+              <h2 className="text-3xl font-bold text-gray-900 mb-6">🚀 Meet EconGraph Pro</h2>
+              <p className="text-base text-gray-600 mb-8 leading-relaxed">
+                Ever spent way too long trying to perfect an IB Economics diagram in PowerPoint or Canva, only to end up frustrated and with something that's just "good enough"? Maybe you've even asked ChatGPT, only to get back vague, generic instructions instead of the precise, IB-ready diagram you need. We've been there—it's painful!
+              </p>
+              <p className="text-base text-gray-600 mb-12 leading-relaxed">
+                That's exactly why we built EconGraph Pro. Our AI tool creates clean, accurate diagrams that align perfectly with IB Economics syllabus guidelines—so you spend less time tweaking and more time studying (or relaxing).
+              </p>
+            </div>
+
+            {/* Features Box */}
+            <div className="bg-[#4895ef] text-white rounded-3xl p-8 mb-12 shadow-lg">
+              <h3 className="text-xl font-bold mb-6">Why Choose EconGraph Pro over ChatGPT?</h3>
+              <ul className="space-y-4 text-base">
+                <li className="flex items-center">
+                  <span className="text-[#ffc145] mr-2">✅</span>
+                  Built specifically for IB Economics diagrams
+                </li>
+                <li className="flex items-center">
+                  <span className="text-[#ffc145] mr-2">✅</span>
+                  Knows exactly what IB examiners expect
+                </li>
+                <li className="flex items-center">
+                  <span className="text-[#ffc145] mr-2">✅</span>
+                  Quickly editable, visually appealing, and accurate diagrams
+                </li>
+                <li className="flex items-center">
+                  <span className="text-[#ffc145] mr-2">✅</span>
+                  Zero guesswork or generic responses
+                </li>
+                <li className="flex items-center">
+                  <span className="text-[#ffc145] mr-2">✅</span>
+                  Designed to boost your marks with clear, examiner-ready visuals
+                </li>
+              </ul>
+              <p className="mt-6 text-base">
+                No more generic diagrams, awkward AI explanations, or confusing instructions—just simple, IB-ready visuals at your fingertips.
+              </p>
+            </div>
+          </div>
+
+          {/* Diagram Selection Section - Right Side */}
+          <div className="lg:w-1/2 lg:pl-8">
+            <div className="sticky top-8">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                  📌 Try it today and see how easy IB Economics diagrams can be!
+                </h2>
+              </div>
+              
+              <div className="grid gap-8">
+                {diagramTypes.map((diagram) => (
+                  <button
+                    key={diagram.id}
+                    onClick={() => onSelect(diagram.id, 'Supply and Demand Diagram')}
+                    className="group relative flex flex-col p-8 bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-xl ring-1 ring-blue-200/50 hover:ring-[#4895ef]/50 transition-all duration-300 text-left"
+                  >
+                    <div className="flex items-center mb-6">
+                      <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50 to-cyan-50">
+                        {diagram.icon}
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 ml-6 tracking-tight">{diagram.label}</h3>
+                    </div>
+                    <p className="text-base leading-relaxed mb-8 text-gray-600">{diagram.description}</p>
+                    <div className="flex items-center text-[#4895ef] font-semibold group-hover:text-[#ffc145] transition-colors duration-300">
+                      Create diagram
+                      <svg className="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
