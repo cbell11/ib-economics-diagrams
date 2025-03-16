@@ -1,7 +1,5 @@
 'use client';
 
-import Image from 'next/image';
-
 interface DiagramSelectorProps {
   onSelect: (type: 'supply-demand', title: string) => void;
 }
