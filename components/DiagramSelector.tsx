@@ -51,7 +51,7 @@ export default function DiagramSelector({ onSelect }: DiagramSelectorProps) {
                 Create professional economics diagrams in seconds. Whether you&apos;re studying for IB Economics or teaching it, our tool makes it easy to create perfect diagrams. No more &quot;good enough&quot; hand-drawn graphs - now you&apos;ll have publication-quality diagrams at your fingertips. It&apos;s what we wished we&apos;d had when we were studying IB Economics!
               </p>
               <p className="text-base text-gray-600 mb-12 leading-relaxed">
-                That's exactly why we built EconGraph Pro. Our AI tool creates clean, accurate diagrams that align perfectly with IB Economics syllabus guidelines—so you spend less time tweaking and more time studying (or relaxing).
+                That&apos;s exactly why we built EconGraph Pro. Our AI tool creates clean, accurate diagrams that align perfectly with IB Economics syllabus guidelines—so you spend less time tweaking and more time studying (or relaxing).
               </p>
             </div>
 

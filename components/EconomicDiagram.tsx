@@ -329,9 +329,15 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
               <button
                 onClick={() => handleDownload('png')}
                 className="w-full flex items-center justify-between p-4 rounded-2xl bg-white hover:bg-gray-50 border border-gray-200 transition-colors duration-200"
+                disabled={isCheckingMembership}
               >
                 <div className="flex items-center">
                   <span className="text-lg font-medium text-gray-900">PNG Format</span>
+                  {remainingDownloads !== null && (
+                    <span className="ml-2 text-sm text-gray-500">
+                      ({remainingDownloads} downloads remaining)
+                    </span>
+                  )}
                 </div>
                 <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -340,14 +346,25 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
               <button
                 onClick={() => handleDownload('jpg')}
                 className="w-full flex items-center justify-between p-4 rounded-2xl bg-white hover:bg-gray-50 border border-gray-200 transition-colors duration-200"
+                disabled={isCheckingMembership}
               >
                 <div className="flex items-center">
                   <span className="text-lg font-medium text-gray-900">JPG Format</span>
+                  {remainingDownloads !== null && (
+                    <span className="ml-2 text-sm text-gray-500">
+                      ({remainingDownloads} downloads remaining)
+                    </span>
+                  )}
                 </div>
                 <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </button>
+              {isCheckingMembership && (
+                <div className="text-center text-sm text-gray-500 mt-2">
+                  Checking membership status...
+                </div>
+              )}
             </div>
 
             {/* Member Link */}
