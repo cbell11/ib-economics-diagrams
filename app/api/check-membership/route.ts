@@ -1,18 +1,19 @@
 import { NextResponse } from 'next/server';
 
 // Updated to use the standard WordPress REST API endpoint for MemberPress
-const MEMBERPRESS_API_URL = 'https://diplomacollective.com/wp-json/mepr/v1';
+const MEMBERPRESS_API_URL = 'https://diplomacollective.com/wp-json/mp/v1/members';
 const API_KEY = process.env.MEMBERPRESS_API_KEY;
 const ALLOWED_MEMBERSHIP_IDS = ['478', '479'];
 const ALLOWED_MEMBERSHIP_NAMES = ['Econ Student Monthly', 'Economics Teacher Free Preview'];
 
 interface MembershipResponse {
-  product_id: number;
-  status: string;
-  created_at: string;
-  expires_at: string | null;
-  name?: string;
-  product_name?: string;
+  id: number;
+  active_memberships: Array<{
+    id: number;
+    title: string;
+    group: string;
+    status: string;
+  }>;
 }
 
 export async function GET(request: Request) {
@@ -33,28 +34,13 @@ export async function GET(request: Request) {
   }
 
   try {
-    // First try to validate the API connection
-    const validateUrl = `${MEMBERPRESS_API_URL}/validate`;
-    console.log('Validating API connection:', validateUrl);
-    
-    const validateResponse = await fetch(validateUrl, {
-      headers: {
-        'Authorization': `Bearer ${API_KEY}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-    });
-
-    console.log('API Validation Response:', validateResponse.status);
-
-    // Now check memberships
-    const membershipUrl = `${MEMBERPRESS_API_URL}/members/${userId}/memberships`;
+    // Make request to MemberPress API
+    const membershipUrl = `${MEMBERPRESS_API_URL}/${userId}`;
     console.log('Fetching from URL:', membershipUrl);
     
     const response = await fetch(membershipUrl, {
       headers: {
-        'Authorization': `Bearer ${API_KEY}`,
-        'Content-Type': 'application/json',
+        'MEMBERPRESS-API-KEY': API_KEY,
         'Accept': 'application/json',
       },
     });
@@ -73,22 +59,19 @@ export async function GET(request: Request) {
       throw new Error(`Failed to fetch membership status: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
-    const memberships = await response.json() as MembershipResponse[];
-    console.log('Received memberships:', memberships);
+    const userData = await response.json() as MembershipResponse;
+    console.log('Received user data:', userData);
     
-    // Check if user has any of the allowed membership IDs or names
-    const hasAccess = memberships.some((membership) => {
-      const hasAllowedId = ALLOWED_MEMBERSHIP_IDS.includes(membership.product_id.toString());
-      const hasAllowedName = membership.name ? 
-        ALLOWED_MEMBERSHIP_NAMES.includes(membership.name) :
-        membership.product_name ? 
-          ALLOWED_MEMBERSHIP_NAMES.includes(membership.product_name) :
-          false;
-      const isActive = membership.status === 'active';
+    // Check if user has any of the allowed membership IDs in their active memberships
+    const hasAccess = userData.active_memberships.some((membership) => {
+      const hasAllowedId = ALLOWED_MEMBERSHIP_IDS.includes(membership.group);
+      const hasAllowedName = ALLOWED_MEMBERSHIP_NAMES.includes(membership.title);
+      const isActive = membership.status === 'publish';
       
       console.log('Checking membership:', {
-        product_id: membership.product_id,
-        name: membership.name || membership.product_name,
+        id: membership.id,
+        title: membership.title,
+        group: membership.group,
         status: membership.status,
         hasAllowedId,
         hasAllowedName,
