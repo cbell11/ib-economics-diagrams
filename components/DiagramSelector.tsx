@@ -22,9 +22,9 @@ const diagramTypes = [
 
 export default function DiagramSelector({ onSelect }: DiagramSelectorProps) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50">
+    <div className="min-h-screen">
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col lg:flex-row lg:space-x-12">
+        <div className="flex flex-col lg:flex-row lg:space-x-12 mt-10">
           {/* Content Section - Left Side */}
           <div className="lg:w-1/2 lg:pr-8">
             <div className="mb-12">
