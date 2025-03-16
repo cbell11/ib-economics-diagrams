@@ -274,14 +274,30 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
               <button
                 onClick={() => handleDownload('png')}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex-1"
+                disabled={isCheckingMembership}
               >
-                PNG
+                {isCheckingMembership ? (
+                  <div className="flex items-center justify-center">
+                    <div className="w-5 h-5 border-t-2 border-white rounded-full animate-spin mr-2" />
+                    Checking...
+                  </div>
+                ) : (
+                  'PNG'
+                )}
               </button>
               <button
                 onClick={() => handleDownload('jpg')}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex-1"
+                disabled={isCheckingMembership}
               >
-                JPG
+                {isCheckingMembership ? (
+                  <div className="flex items-center justify-center">
+                    <div className="w-5 h-5 border-t-2 border-white rounded-full animate-spin mr-2" />
+                    Checking...
+                  </div>
+                ) : (
+                  'JPG'
+                )}
               </button>
             </div>
           </div>

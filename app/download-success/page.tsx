@@ -96,16 +96,16 @@ export default function DownloadSuccess() {
             Return to Diagram
           </Link>
           <p className="text-sm text-gray-500">
-            Consider upgrading to a{' '}
+            Consider upgrading to a
             <a 
               href="https://diplomacollective.com/home/for-students/ib-economics/"
-              className="text-blue-600 hover:underline"
+              className="text-blue-600 hover:underline mx-1"
               target="_blank"
               rel="noopener noreferrer"
             >
               student membership
             </a>
-            {' '}for unlimited access to all resources.
+            for unlimited access to all resources.
           </p>
         </div>
       </div>
