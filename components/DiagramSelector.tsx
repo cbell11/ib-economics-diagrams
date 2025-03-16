@@ -1,5 +1,7 @@
 'use client';
 
+import Image from 'next/image';
+
 interface DiagramSelectorProps {
   onSelect: (type: 'supply-demand', title: string) => void;
 }
@@ -26,10 +28,12 @@ export default function DiagramSelector({ onSelect }: DiagramSelectorProps) {
       {/* Logo Section */}
       <div className="w-full py-8 px-4 sm:px-6 lg:px-8">
         <div className="flex justify-center">
-          <img 
-            src="/diploma-collective-logo.png" 
-            alt="Diploma Collective Logo" 
-            className="h-16 w-auto"
+          <Image
+            src="/diploma-collective-logo.png"
+            alt="Diploma Collective Logo"
+            width={200}
+            height={50}
+            className="h-8 w-auto"
           />
         </div>
       </div>
@@ -43,8 +47,8 @@ export default function DiagramSelector({ onSelect }: DiagramSelectorProps) {
                 EconGraph Pro
               </h1>
               <h2 className="text-3xl font-bold text-gray-900 mb-6">🚀 Meet EconGraph Pro</h2>
-              <p className="text-base text-gray-600 mb-8 leading-relaxed">
-                Ever spent way too long trying to perfect an IB Economics diagram in PowerPoint or Canva, only to end up frustrated and with something that's just "good enough"? Maybe you've even asked ChatGPT, only to get back vague, generic instructions instead of the precise, IB-ready diagram you need. We've been there—it's painful!
+              <p className="text-gray-600 mb-6">
+                Create professional economics diagrams in seconds. Whether you&apos;re studying for IB Economics or teaching it, our tool makes it easy to create perfect diagrams. No more &quot;good enough&quot; hand-drawn graphs - now you&apos;ll have publication-quality diagrams at your fingertips. It&apos;s what we wished we&apos;d had when we were studying IB Economics!
               </p>
               <p className="text-base text-gray-600 mb-12 leading-relaxed">
                 That's exactly why we built EconGraph Pro. Our AI tool creates clean, accurate diagrams that align perfectly with IB Economics syllabus guidelines—so you spend less time tweaking and more time studying (or relaxing).

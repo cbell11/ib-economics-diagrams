@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import DiagramSelector from '../components/DiagramSelector';
+import Image from 'next/image';
 
 const EconomicDiagram = dynamic(() => import('../components/EconomicDiagram'), {
   ssr: false
@@ -31,10 +32,12 @@ export default function DiagramPage() {
       {/* Logo Section */}
       <div className="w-full py-8 px-4 sm:px-6 lg:px-8">
         <div className="flex justify-center">
-          <img 
-            src="/diploma-collective-logo.png" 
-            alt="Diploma Collective Logo" 
-            className="h-16 w-auto"
+          <Image
+            src="/diploma-collective-logo.png"
+            alt="Diploma Collective Logo"
+            width={200}
+            height={50}
+            className="h-8 w-auto"
           />
         </div>
       </div>

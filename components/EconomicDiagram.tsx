@@ -6,6 +6,7 @@ import { DiagramSettings, defaultSettings } from '../types/diagram';
 import type { Stage } from 'konva/lib/Stage';
 import { loadStripe } from '@stripe/stripe-js';
 import { Dialog } from '@headlessui/react';
+import Image from 'next/image';
 
 const defaultLabels = {
   'supply-demand': {
@@ -404,10 +405,12 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
                   Purchase Now
                 </button>
                 <div className="mt-4 flex items-center justify-center">
-                  <img 
-                    src="https://cdn.brandfetch.io/idxAg10C0L/theme/dark/logo.svg?c=1dxbfHSJFAPEGdCLU4o5B"
+                  <Image 
+                    src="/Powered by Stripe - blurple-300x68-b3bf095.png"
                     alt="Powered by Stripe" 
-                    className="h-8"
+                    width={300}
+                    height={68}
+                    className="h-8 w-auto"
                   />
                 </div>
               </div>
@@ -422,15 +425,19 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
                   Subscribe Now
                 </button>
                 <div className="mt-4 flex items-center justify-center space-x-6">
-                  <img 
-                    src="https://cdn.brandfetch.io/idxAg10C0L/theme/dark/logo.svg?c=1dxbfHSJFAPEGdCLU4o5B"
+                  <Image 
+                    src="/Powered by Stripe - blurple-300x68-b3bf095.png"
                     alt="Powered by Stripe" 
-                    className="h-8"
+                    width={300}
+                    height={68}
+                    className="h-8 w-auto"
                   />
-                  <img 
-                    src="https://www.paypalobjects.com/webstatic/de_DE/i/de-pp-logo-100px.png" 
+                  <Image 
+                    src="/paypal-logo.svg"
                     alt="PayPal" 
-                    className="h-6"
+                    width={100}
+                    height={26}
+                    className="h-6 w-auto"
                   />
                 </div>
                 <p className="text-sm text-gray-500 mt-2">
