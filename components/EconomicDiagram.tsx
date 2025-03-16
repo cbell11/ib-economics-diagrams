@@ -79,6 +79,7 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
   });
   const [isCheckingMembership, setIsCheckingMembership] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState<'png' | 'jpg' | null>(null);
+  const [remainingDownloads, setRemainingDownloads] = useState<number | null>(null);
 
   // Mark component as client-side rendered
   useEffect(() => {
@@ -115,6 +116,26 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
       yAxisLabel: defaultLabels[type].yAxis
     }));
   }, [type, isClient]);
+
+  // Add this effect to check remaining downloads when component mounts
+  useEffect(() => {
+    const checkRemainingDownloads = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const userId = urlParams.get('user_id');
+
+      if (!userId) return;
+
+      try {
+        const response = await fetch(`/api/track-downloads?userId=${userId}`);
+        const data = await response.json();
+        setRemainingDownloads(data.remaining);
+      } catch (error) {
+        console.error('Error checking remaining downloads:', error);
+      }
+    };
+
+    checkRemainingDownloads();
+  }, []);
 
   const handleDownload = async (format: 'png' | 'jpg') => {
     setSelectedFormat(format);
@@ -183,25 +204,72 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
     window.location.href = 'https://diplomacollective.com/home/for-students/ib-economics/';
   };
 
-  const downloadDiagram = (format: 'png' | 'jpg') => {
+  const downloadDiagram = async (format: 'png' | 'jpg') => {
     const stage = stageRef.current?.getStage();
     if (!stage) return;
-    
-    const dataURL = stage.toDataURL({
-      pixelRatio: 2,
-      mimeType: `image/${format}`,
-      quality: 1
-    });
-    
-    const link = document.createElement('a');
-    const fileName = `${settings.title || 'Economic Diagram'} - EconGraph Pro by Diploma Collective.${format}`;
-    link.download = fileName.replace(/[/\\?%*:|"<>]/g, '-');
-    link.href = dataURL;
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setShowFormatDialog(false);
+
+    try {
+      // Get the user ID from the URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const userId = urlParams.get('user_id');
+
+      if (!userId) {
+        console.error('No user ID found');
+        return;
+      }
+
+      // Check download limit
+      const response = await fetch(`/api/track-downloads?userId=${userId}`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          // Download limit reached
+          alert('You have reached your monthly download limit. Please contact support for additional downloads.');
+          return;
+        }
+        throw new Error('Failed to track download');
+      }
+
+      // Remove watermark by hiding it temporarily
+      const watermarkNode = stage.findOne('.watermark');
+      if (watermarkNode) {
+        watermarkNode.visible(false);
+      }
+
+      // Create the download with watermark removed
+      const dataURL = stage.toDataURL({
+        pixelRatio: 2,
+        mimeType: `image/${format}`,
+        quality: 1
+      });
+
+      // Restore watermark visibility
+      if (watermarkNode) {
+        watermarkNode.visible(true);
+      }
+      
+      const link = document.createElement('a');
+      const fileName = `${settings.title || 'Economic Diagram'} - EconGraph Pro by Diploma Collective.${format}`;
+      link.download = fileName.replace(/[/\\?%*:|"<>]/g, '-');
+      link.href = dataURL;
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setShowFormatDialog(false);
+
+      // Show remaining downloads
+      if (data.remaining > 0) {
+        alert(`Download successful! You have ${data.remaining} downloads remaining this month.`);
+      }
+    } catch (error) {
+      console.error('Error downloading diagram:', error);
+      alert('Failed to download diagram. Please try again.');
+    }
   };
 
   // Base layout that's identical between server and client
@@ -271,6 +339,16 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
                 </svg>
               </button>
             </div>
+            {remainingDownloads !== null && (
+              <p className="text-sm text-gray-600 mb-4">
+                You have {remainingDownloads} downloads remaining this month.
+                {remainingDownloads === 0 && (
+                  <span className="block mt-2 text-red-600">
+                    You have reached your monthly download limit. Please contact support for additional downloads.
+                  </span>
+                )}
+              </p>
+            )}
             <div className="flex gap-3 justify-center">
               <button
                 onClick={() => handleDownload('png')}
