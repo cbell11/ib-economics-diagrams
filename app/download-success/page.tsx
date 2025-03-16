@@ -54,7 +54,7 @@ export default function DownloadSuccess() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-4">Payment Verification Failed</h1>
-          <p className="text-gray-600 mb-6">We couldn't verify your payment. Please try again or contact support.</p>
+          <p className="text-gray-600 mb-6">We couldn&apos;t verify your payment. Please try again or contact support.</p>
           <Link 
             href="/"
             className="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
