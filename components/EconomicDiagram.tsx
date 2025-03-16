@@ -126,27 +126,28 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
       const userId = urlParams.get('user_id');
 
       if (!userId) {
-        // If no user ID, show payment options
+        console.log('No user ID found in URL');
         setShowFormatDialog(false);
         setShowPaymentDialog(true);
         return;
       }
 
-      // Check membership status
+      console.log('Checking membership for user ID:', userId);
       const response = await fetch(`/api/check-membership?userId=${userId}`);
       const data = await response.json();
 
-      if (data.hasAccess) {
-        // User has correct membership level, proceed with download
+      console.log('Membership check response:', data);
+
+      if (response.ok && data.hasAccess) {
+        console.log('User has access, proceeding with download');
         downloadDiagram(format);
       } else {
-        // Show payment options dialog
+        console.log('User does not have access or error occurred:', data.error || 'Unknown error');
         setShowFormatDialog(false);
         setShowPaymentDialog(true);
       }
     } catch (error) {
       console.error('Error checking membership:', error);
-      // Show payment options dialog on error
       setShowFormatDialog(false);
       setShowPaymentDialog(true);
     } finally {
