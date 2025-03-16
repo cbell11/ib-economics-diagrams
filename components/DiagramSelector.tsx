@@ -1,7 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-
 interface DiagramSelectorProps {
   onSelect: (type: 'supply-demand', title: string) => void;
 }
