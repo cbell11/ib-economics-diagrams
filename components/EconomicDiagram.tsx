@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { DiagramSettings, defaultSettings } from '../types/diagram';
 import type { Stage } from 'konva/lib/Stage';
+import { loadStripe } from '@stripe/stripe-js';
 
 const defaultLabels = {
   'supply-demand': {
@@ -61,18 +62,23 @@ const DownloadIcon = () => (
   </svg>
 );
 
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+
 export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<DiagramCanvasRef>(null);
   const [isClient, setIsClient] = useState(false);
   const [stageSize, setStageSize] = useState({ width: 600, height: 400 });
   const [showFormatDialog, setShowFormatDialog] = useState(false);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [settings, setSettings] = useState<DiagramSettings>({
     ...defaultSettings,
     title: defaultLabels[type].title,
     xAxisLabel: defaultLabels[type].xAxis,
     yAxisLabel: defaultLabels[type].yAxis
   });
+  const [isCheckingMembership, setIsCheckingMembership] = useState(false);
+  const [selectedFormat, setSelectedFormat] = useState<'png' | 'jpg' | null>(null);
 
   // Mark component as client-side rendered
   useEffect(() => {
@@ -110,26 +116,87 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
     }));
   }, [type, isClient]);
 
-  const handleDownload = (format: 'png' | 'jpg') => {
+  const handleDownload = async (format: 'png' | 'jpg') => {
+    setSelectedFormat(format);
+    setIsCheckingMembership(true);
+
+    try {
+      // Get the user ID from the URL or session
+      const urlParams = new URLSearchParams(window.location.search);
+      const userId = urlParams.get('user_id');
+
+      if (!userId) {
+        // If no user ID, show payment options
+        setShowFormatDialog(false);
+        setShowPaymentDialog(true);
+        return;
+      }
+
+      // Check membership status
+      const response = await fetch(`/api/check-membership?userId=${userId}`);
+      const data = await response.json();
+
+      if (data.hasAccess) {
+        // User has correct membership level, proceed with download
+        downloadDiagram(format);
+      } else {
+        // Show payment options dialog
+        setShowFormatDialog(false);
+        setShowPaymentDialog(true);
+      }
+    } catch (error) {
+      console.error('Error checking membership:', error);
+      // Show payment options dialog on error
+      setShowFormatDialog(false);
+      setShowPaymentDialog(true);
+    } finally {
+      setIsCheckingMembership(false);
+    }
+  };
+
+  const handleOneTimePayment = async () => {
+    try {
+      const response = await fetch('/api/create-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ format: selectedFormat }),
+      });
+
+      const { sessionId } = await response.json();
+      const stripe = await stripePromise;
+      
+      if (stripe) {
+        const { error } = await stripe.redirectToCheckout({ sessionId });
+        if (error) {
+          console.error('Error redirecting to checkout:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Error creating payment session:', error);
+    }
+  };
+
+  const handleSubscription = () => {
+    window.location.href = 'https://diplomacollective.com/home/for-students/ib-economics/';
+  };
+
+  const downloadDiagram = (format: 'png' | 'jpg') => {
     const stage = stageRef.current?.getStage();
     if (!stage) return;
     
-    // Convert stage to dataURL with white background
     const dataURL = stage.toDataURL({
-      pixelRatio: 2, // Higher quality
+      pixelRatio: 2,
       mimeType: `image/${format}`,
-      quality: 1,
-      width: stage.width(),
-      height: stage.height()
+      quality: 1
     });
     
-    // Create a link element
     const link = document.createElement('a');
     const fileName = `${settings.title || 'Economic Diagram'} - EconGraph Pro by Diploma Collective.${format}`;
-    link.download = fileName.replace(/[/\\?%*:|"<>]/g, '-'); // Remove invalid filename characters
+    link.download = fileName.replace(/[/\\?%*:|"<>]/g, '-');
     link.href = dataURL;
     
-    // Append to document, click, and remove
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -216,6 +283,64 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
               >
                 JPG
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPaymentDialog && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50 p-4">
+          <div 
+            className="bg-white rounded-lg p-6 shadow-xl max-w-md w-full mx-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold">Choose Your Plan</h3>
+              <button
+                onClick={() => setShowPaymentDialog(false)}
+                className="text-gray-500 hover:text-gray-700 p-2"
+              >
+                <svg 
+                  className="w-5 h-5" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 border rounded-lg">
+                <h4 className="text-lg font-semibold mb-2">One-Time Download</h4>
+                <p className="text-gray-600 mb-4">Download this diagram in {selectedFormat?.toUpperCase()} format.</p>
+                <p className="text-2xl font-bold text-blue-600 mb-4">$4.99</p>
+                <button
+                  onClick={handleOneTimePayment}
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Purchase Now
+                </button>
+              </div>
+              <div className="p-4 border rounded-lg bg-gray-50">
+                <h4 className="text-lg font-semibold mb-2">Student Membership</h4>
+                <p className="text-gray-600 mb-4">Get unlimited access to all diagrams and resources.</p>
+                <p className="text-2xl font-bold text-blue-600 mb-4">$12.99/month</p>
+                <button
+                  onClick={handleSubscription}
+                  className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Subscribe Now
+                </button>
+                <p className="text-sm text-gray-500 mt-2">
+                  Access all IB Economics resources at Diploma Collective
+                </p>
+              </div>
             </div>
           </div>
         </div>
