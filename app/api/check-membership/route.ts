@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
-const MEMBERPRESS_API_URL = 'https://diplomacollective.com/wp-json/mp/v1/members';
+// Updated to use the standard WordPress REST API endpoint for MemberPress
+const MEMBERPRESS_API_URL = 'https://diplomacollective.com/wp-json/mepr/v1';
 const API_KEY = process.env.MEMBERPRESS_API_KEY;
 const ALLOWED_MEMBERSHIP_IDS = ['478', '479'];
 const ALLOWED_MEMBERSHIP_NAMES = ['Econ Student Monthly', 'Economics Teacher Free Preview'];
@@ -32,9 +33,25 @@ export async function GET(request: Request) {
   }
 
   try {
-    console.log('Fetching from URL:', `${MEMBERPRESS_API_URL}/${userId}/active_memberships`);
+    // First try to validate the API connection
+    const validateUrl = `${MEMBERPRESS_API_URL}/validate`;
+    console.log('Validating API connection:', validateUrl);
     
-    const response = await fetch(`${MEMBERPRESS_API_URL}/${userId}/active_memberships`, {
+    const validateResponse = await fetch(validateUrl, {
+      headers: {
+        'Authorization': `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    });
+
+    console.log('API Validation Response:', validateResponse.status);
+
+    // Now check memberships
+    const membershipUrl = `${MEMBERPRESS_API_URL}/members/${userId}/memberships`;
+    console.log('Fetching from URL:', membershipUrl);
+    
+    const response = await fetch(membershipUrl, {
       headers: {
         'Authorization': `Bearer ${API_KEY}`,
         'Content-Type': 'application/json',
@@ -43,15 +60,17 @@ export async function GET(request: Request) {
     });
 
     console.log('MemberPress API Response Status:', response.status);
+    console.log('MemberPress API Response Headers:', Object.fromEntries(response.headers.entries()));
     
     if (!response.ok) {
       const errorText = await response.text();
       console.error('MemberPress API Error:', {
         status: response.status,
         statusText: response.statusText,
-        body: errorText
+        body: errorText,
+        headers: Object.fromEntries(response.headers.entries())
       });
-      throw new Error(`Failed to fetch membership status: ${response.status} ${response.statusText}`);
+      throw new Error(`Failed to fetch membership status: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const memberships = await response.json() as MembershipResponse[];
