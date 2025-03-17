@@ -1,10 +1,19 @@
 'use client';
+import React from 'react';
 
 interface DiagramSelectorProps {
   onSelect: (type: 'supply-demand', title: string) => void;
 }
 
-const diagramTypes = [
+interface DiagramType {
+  id: string;
+  label: string;
+  description: string;
+  comingSoon?: boolean;
+  icon: React.ReactNode;
+}
+
+const diagramTypes: DiagramType[] = [
   {
     id: 'supply-demand',
     label: 'Supply & Demand',
@@ -17,13 +26,75 @@ const diagramTypes = [
         <circle cx="3" cy="21" r="1" className="fill-[#4895ef]" />
       </svg>
     )
+  },
+  {
+    id: 'neo-classical-ad-as',
+    label: 'Neo-Classical AD/AS',
+    description: 'Coming Soon - Create aggregate demand and supply diagrams with a vertical long-run aggregate supply curve.',
+    comingSoon: true,
+    icon: (
+      <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l6 6l4-4l8 8" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 16l6-6l4 4l8-8" />
+        <circle cx="21" cy="3" r="1" className="fill-gray-400" />
+        <circle cx="3" cy="21" r="1" className="fill-gray-400" />
+      </svg>
+    )
+  },
+  {
+    id: 'keynesian-ad-as',
+    label: 'Keynesian AD/AS',
+    description: 'Coming Soon - Create aggregate demand and supply diagrams with a horizontal short-run aggregate supply curve.',
+    comingSoon: true,
+    icon: (
+      <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12h18" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 16l6-6l4 4l8-8" />
+        <circle cx="21" cy="3" r="1" className="fill-gray-400" />
+        <circle cx="3" cy="21" r="1" className="fill-gray-400" />
+      </svg>
+    )
+  },
+  {
+    id: 'externalities',
+    label: 'Externalities',
+    description: 'Coming Soon - Illustrate positive and negative externalities with social and private cost/benefit curves.',
+    comingSoon: true,
+    icon: (
+      <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>
+    )
+  },
+  {
+    id: 'lorenz-curve',
+    label: 'Lorenz Curve',
+    description: 'Coming Soon - Create Lorenz curves to analyze income inequality and calculate the Gini coefficient.',
+    comingSoon: true,
+    icon: (
+      <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v16h16" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 20c4-8 8-12 16-16" />
+      </svg>
+    )
+  },
+  {
+    id: 'international-trade',
+    label: 'International Trade Diagram',
+    description: 'Coming Soon - Visualize comparative advantage, terms of trade, and gains from trade between countries.',
+    comingSoon: true,
+    icon: (
+      <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 15v4m0 0h4m-4 0l5-5m4 0l5 5m0 0v-4m0 4h-4" />
+      </svg>
+    )
   }
 ] as const;
 
 export default function DiagramSelector({ onSelect }: DiagramSelectorProps) {
   return (
     <div className="min-h-screen">
-      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-[70%] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row lg:space-x-12 mt-10">
           {/* Content Section - Left Side */}
           <div className="lg:w-1/2 lg:pr-8">
@@ -80,23 +151,53 @@ export default function DiagramSelector({ onSelect }: DiagramSelectorProps) {
                 </h2>
               </div>
               
-              <div className="grid gap-8">
+              <div className="grid gap-6">
                 {diagramTypes.map((diagram) => (
                   <button
                     key={diagram.id}
-                    onClick={() => onSelect(diagram.id, 'Supply and Demand Diagram')}
-                    className="group relative flex flex-col p-8 bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-xl ring-1 ring-blue-200/50 hover:ring-[#4895ef]/50 transition-all duration-300 text-left"
+                    onClick={() => !diagram.comingSoon && onSelect(diagram.id as 'supply-demand', 'Supply and Demand Diagram')}
+                    disabled={diagram.comingSoon}
+                    className={`group relative flex flex-col p-8 ${
+                      diagram.comingSoon 
+                        ? 'bg-gray-50 cursor-not-allowed opacity-75' 
+                        : 'bg-white/80 backdrop-blur-sm hover:shadow-xl hover:ring-[#4895ef]/50'
+                    } rounded-3xl shadow-lg ring-1 ring-blue-200/50 transition-all duration-300 text-left`}
                   >
                     <div className="flex items-center mb-6">
-                      <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50 to-cyan-50">
+                      <div className={`p-4 rounded-2xl ${
+                        diagram.comingSoon 
+                          ? 'bg-gray-100' 
+                          : 'bg-gradient-to-br from-blue-50 to-cyan-50'
+                      }`}>
                         {diagram.icon}
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900 ml-6 tracking-tight">{diagram.label}</h3>
+                      <div className="ml-6">
+                        <h3 className={`text-xl font-bold ${
+                          diagram.comingSoon ? 'text-gray-500' : 'text-gray-900'
+                        } tracking-tight`}>
+                          {diagram.label}
+                        </h3>
+                        {diagram.comingSoon && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mt-2">
+                            Coming Soon
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-base leading-relaxed mb-8 text-gray-600">{diagram.description}</p>
-                    <div className="flex items-center text-[#4895ef] font-semibold group-hover:text-[#ffc145] transition-colors duration-300">
-                      Create diagram
-                      <svg className="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <p className={`text-base leading-relaxed mb-8 ${
+                      diagram.comingSoon ? 'text-gray-500' : 'text-gray-600'
+                    }`}>
+                      {diagram.description}
+                    </p>
+                    <div className={`flex items-center ${
+                      diagram.comingSoon 
+                        ? 'text-gray-400' 
+                        : 'text-[#4895ef] group-hover:text-[#ffc145]'
+                    } font-semibold transition-colors duration-300`}>
+                      {diagram.comingSoon ? 'Coming Soon' : 'Create diagram'}
+                      <svg className={`w-5 h-5 ml-2 ${
+                        !diagram.comingSoon && 'transform group-hover:translate-x-1'
+                      } transition-transform duration-300`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                       </svg>
                     </div>
