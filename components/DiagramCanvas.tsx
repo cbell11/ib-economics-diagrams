@@ -9,13 +9,14 @@ interface DiagramCanvasProps {
   settings: DiagramSettings;
   width: number;
   height: number;
+  type: 'supply-demand' | 'ppf' | 'cost-curves' | 'subsidy' | 'tax' | 'price-ceiling' | 'price-floor';
 }
 
 interface DiagramCanvasRef {
   getStage: () => Konva.Stage | null;
 }
 
-const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settings, width, height }, ref) => {
+const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settings, width, height, type }, ref) => {
   const [mounted, setMounted] = useState(false);
   const [showS2, setShowS2] = useState(false);
   const [showS3, setShowS3] = useState(false);

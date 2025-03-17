@@ -72,7 +72,7 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [settings, setSettings] = useState<DiagramSettings>({
     ...defaultSettings,
-    title: defaultLabels[type].title,
+    title: title || defaultLabels[type].title,
     xAxisLabel: defaultLabels[type].xAxis,
     yAxisLabel: defaultLabels[type].yAxis
   });
@@ -103,17 +103,17 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
     return () => window.removeEventListener('resize', updateSize);
   }, [isClient]);
 
-  // Update labels when type changes
+  // Update labels when type or title changes
   useEffect(() => {
     if (!isClient) return;
 
     setSettings(prev => ({
       ...prev,
-      title: defaultLabels[type].title,
+      title: title || defaultLabels[type].title,
       xAxisLabel: defaultLabels[type].xAxis,
       yAxisLabel: defaultLabels[type].yAxis
     }));
-  }, [type, isClient]);
+  }, [type, title, isClient]);
 
   // Add this effect to check remaining downloads when component mounts
   useEffect(() => {
@@ -247,6 +247,10 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
     }
   };
 
+  const handleSettingsChange = (newSettings: DiagramSettings) => {
+    setSettings(newSettings);
+  };
+
   return (
     <div className="w-full space-y-4" ref={containerRef}>
       {!isClient ? <LoadingPlaceholder /> : (
@@ -255,12 +259,12 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
             ref={canvasRef}
             width={stageSize.width}
             height={stageSize.height}
-            type={type}
             settings={settings}
+            type={type}
           />
           <DiagramControls
             settings={settings}
-            onChange={setSettings}
+            onUpdate={handleSettingsChange}
           />
           <div className="flex justify-end">
             <button
