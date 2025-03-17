@@ -210,49 +210,74 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
   };
 
   const downloadDiagram = async (format: 'png' | 'jpg') => {
+    const stage = stageRef.current?.getStage();
+    if (!stage) return;
+
     try {
-      const stage = stageRef.current?.getStage();
-      if (!stage) return;
+      // Get the user ID from the URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const userId = urlParams.get('user_id');
 
-      // Check if this is a paid download
-      const response = await fetch('/api/check-paid-download', {
-        method: 'GET',
-        credentials: 'include', // Important for cookies
-      });
-      const { isPaid } = await response.json();
-
-      // If this is a paid download, temporarily hide watermarks
-      const watermarks = stage.find('.watermark');
-      if (isPaid) {
-        watermarks.forEach(mark => mark.hide());
+      if (!userId) {
+        console.error('No user ID found');
+        return;
       }
 
-      // Create the download
+      // Check if this is a paid download
+      const membershipResponse = await fetch(`/api/check-membership?userId=${userId}`);
+      const { hasAccess } = await membershipResponse.json();
+
+      // Check download limit
+      const response = await fetch(`/api/track-downloads?userId=${userId}`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          // Download limit reached
+          alert('You have reached your monthly download limit. Please contact support for additional downloads.');
+          return;
+        }
+        throw new Error('Failed to track download');
+      }
+
+      // Remove watermark by hiding it temporarily
+      const watermarks = stage.find('.watermark, [name="watermark"]');
+      watermarks.forEach(watermark => {
+        watermark.visible(false);
+      });
+
+      // Create the download with watermark removed
       const dataURL = stage.toDataURL({
         pixelRatio: 2,
         mimeType: `image/${format}`,
         quality: 1
       });
 
-      // Restore watermarks if they were hidden
-      if (isPaid) {
-        watermarks.forEach(mark => mark.show());
+      // Restore watermark visibility if user doesn't have access
+      if (!hasAccess) {
+        watermarks.forEach(watermark => {
+          watermark.visible(true);
+        });
       }
-
-      // Create download link
+      
       const link = document.createElement('a');
-      link.href = dataURL;
-      const fileName = `economic-diagram.${format}`;
+      const fileName = `${settings.title || 'Economic Diagram'} - EconGraph Pro by Diploma Collective.${format}`;
       link.download = fileName.replace(/[/\\?%*:|"<>]/g, '-');
+      link.href = dataURL;
+      
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      setShowFormatDialog(false);
 
-      // Show success message
-      if (isPaid) {
-        alert('Download successful! This is your watermark-free diagram.');
-      } else {
-        alert('Download successful! Consider purchasing a watermark-free version.');
+      // Show remaining downloads only for members
+      if (hasAccess && data.remaining > 0) {
+        alert(`Download successful! You have ${data.remaining} downloads remaining this month.`);
+      } else if (!hasAccess) {
+        alert('Download successful! Consider purchasing a membership for watermark-free diagrams.');
       }
     } catch (error) {
       console.error('Error downloading diagram:', error);

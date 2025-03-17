@@ -12,24 +12,11 @@ export async function POST(request: Request) {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
     // Verify the payment was successful
-    if (session.payment_status === 'paid') {
-      // Store the session ID in a cookie to verify watermark-free downloads
-      const response = NextResponse.json({ isValid: true });
-      response.cookies.set('paid_download', sessionId, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 60 * 60, // 1 hour expiry
-      });
-      return response;
-    }
+    const isValid = session.payment_status === 'paid';
 
-    return NextResponse.json({ isValid: false });
+    return NextResponse.json({ isValid });
   } catch (error) {
     console.error('Error verifying payment:', error);
-    return NextResponse.json(
-      { error: 'Failed to verify payment' },
-      { status: 500 }
-    );
+    return NextResponse.json({ isValid: false });
   }
 } 
