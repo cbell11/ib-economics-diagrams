@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { DiagramSettings, defaultSettings } from '../types/diagram';
 import type { Stage } from 'konva/lib/Stage';
-import { loadStripe } from '@stripe/stripe-js';
 import { Dialog } from '@headlessui/react';
 import Image from 'next/image';
 
@@ -64,11 +63,9 @@ const DownloadIcon = () => (
   </svg>
 );
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-
 export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const stageRef = useRef<DiagramCanvasRef>(null);
+  const canvasRef = useRef<DiagramCanvasRef>(null);
   const [isClient, setIsClient] = useState(false);
   const [stageSize, setStageSize] = useState({ width: 600, height: 400 });
   const [showFormatDialog, setShowFormatDialog] = useState(false);
@@ -80,7 +77,6 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
     yAxisLabel: defaultLabels[type].yAxis
   });
   const [isCheckingMembership, setIsCheckingMembership] = useState(false);
-  const [selectedFormat, setSelectedFormat] = useState<'png' | 'jpg' | null>(null);
   const [remainingDownloads, setRemainingDownloads] = useState<number | null>(null);
 
   // Mark component as client-side rendered
@@ -140,7 +136,6 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
   }, []);
 
   const handleDownload = async (format: 'png' | 'jpg') => {
-    setSelectedFormat(format);
     setIsCheckingMembership(true);
 
     try {
@@ -187,7 +182,7 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
   };
 
   const downloadDiagram = async (format: 'png' | 'jpg') => {
-    const stage = stageRef.current?.getStage();
+    const stage = canvasRef.current?.getStage();
     if (!stage) return;
 
     try {
@@ -214,7 +209,7 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
       if (!response.ok) {
         if (response.status === 429) {
           // Download limit reached
-          alert('You have reached your monthly download limit. Please contact support for additional downloads.');
+          alert('You have reached your daily download limit (15 downloads per day). Please try again tomorrow.');
           return;
         }
         throw new Error('Failed to track download');
@@ -226,150 +221,95 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
         watermark.visible(false);
       });
 
-      // Create the download with watermark removed
-      const dataURL = stage.toDataURL({
-        pixelRatio: 2,
-        mimeType: `image/${format}`,
-        quality: 1
-      });
+      // Update remaining downloads count
+      setRemainingDownloads(data.remaining);
 
-      // Restore watermark visibility if user doesn't have access
-      if (!hasAccess) {
-        watermarks.forEach(watermark => {
-          watermark.visible(true);
-        });
-      }
-      
+      // Get the data URL for the image
+      const dataURL = stage.toDataURL({ pixelRatio: 2 });
+
+      // Create a temporary link and trigger download
       const link = document.createElement('a');
-      const fileName = `${settings.title || 'Economic Diagram'} - EconGraph Pro by Diploma Collective.${format}`;
-      link.download = fileName.replace(/[/\\?%*:|"<>]/g, '-');
+      link.download = `diagram.${format}`;
       link.href = dataURL;
-      
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      setShowFormatDialog(false);
 
-      // Show remaining downloads only for members
-      if (hasAccess && data.remaining > 0) {
-        alert(`Download successful! You have ${data.remaining} downloads remaining this month.`);
-      } else if (!hasAccess) {
-        alert('Download successful! Consider purchasing a membership for watermark-free diagrams.');
-      }
+      // Show watermarks again
+      watermarks.forEach(watermark => {
+        watermark.visible(!hasAccess);
+      });
+
+      // Close the format dialog
+      setShowFormatDialog(false);
     } catch (error) {
       console.error('Error downloading diagram:', error);
-      alert('Failed to download diagram. Please try again.');
     }
   };
 
-  // Base layout that's identical between server and client
   return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-semibold text-center text-gray-900">{title}</h2>
-      <div className="flex gap-6">
-        <div ref={containerRef} className="flex-1 bg-white p-6 rounded-lg shadow">
-          {!isClient ? (
-            <LoadingPlaceholder />
-          ) : (
-            <DiagramCanvas
-              ref={stageRef}
-              settings={settings}
-              width={stageSize.width}
-              height={stageSize.height}
-            />
-          )}
-        </div>
-        <div className="w-80 flex-shrink-0">
-          <div className="sticky top-4">
-            {isClient && (
-              <DiagramControls
-                settings={settings}
-                onUpdate={setSettings}
-              />
-            )}
-            <div className="mt-4">
+    <div className="w-full space-y-4" ref={containerRef}>
+      {!isClient ? <LoadingPlaceholder /> : (
+        <>
+          <DiagramCanvas
+            ref={canvasRef}
+            width={stageSize.width}
+            height={stageSize.height}
+            type={type}
+            settings={settings}
+          />
+          <DiagramControls
+            settings={settings}
+            onChange={setSettings}
+          />
+          <div className="flex justify-end">
+            <button
+              onClick={() => setShowFormatDialog(true)}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-[#32a567] hover:bg-[#2a8d57] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#32a567]"
+            >
+              <DownloadIcon />
+              Download Diagram
+            </button>
+          </div>
+        </>
+      )}
+
+      {showFormatDialog && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50 p-4">
+          <div 
+            className="bg-white rounded-lg p-6 shadow-xl max-w-sm w-full mx-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold text-gray-900">Choose Format</h3>
               <button
-                onClick={() => setShowFormatDialog(true)}
-                className="w-full px-4 py-2 bg-[#32a567] text-white rounded-lg hover:bg-[#2a8d57] transition-colors shadow-sm flex items-center justify-center"
-                disabled={!isClient}
+                onClick={() => setShowFormatDialog(false)}
+                className="text-gray-500 hover:text-gray-700"
               >
-                <DownloadIcon />
-                Download Diagram
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="space-y-4">
+              <button
+                onClick={() => handleDownload('png')}
+                disabled={isCheckingMembership}
+                className="w-full bg-[#32a567] text-white py-2 px-4 rounded-md hover:bg-[#2a8d57] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              >
+                Download as PNG
+              </button>
+              <button
+                onClick={() => handleDownload('jpg')}
+                disabled={isCheckingMembership}
+                className="w-full bg-[#32a567] text-white py-2 px-4 rounded-md hover:bg-[#2a8d57] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              >
+                Download as JPG
               </button>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Format Selection Dialog */}
-      <Dialog
-        open={showFormatDialog}
-        onClose={() => setShowFormatDialog(false)}
-        className="relative z-50"
-      >
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Dialog.Panel className="w-full max-w-md bg-white rounded-3xl p-8">
-            <Dialog.Title className="text-2xl font-bold text-gray-900 mb-6">
-              Choose Download Format
-            </Dialog.Title>
-            <div className="space-y-4">
-              <button
-                onClick={() => handleDownload('png')}
-                className="w-full flex items-center justify-between p-4 rounded-2xl bg-white hover:bg-gray-50 border border-gray-200 transition-colors duration-200"
-                disabled={isCheckingMembership}
-              >
-                <div className="flex items-center">
-                  <span className="text-lg font-medium text-gray-900">PNG Format</span>
-                  {remainingDownloads !== null && (
-                    <span className="ml-2 text-sm text-gray-500">
-                      ({remainingDownloads} downloads remaining)
-                    </span>
-                  )}
-                </div>
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-              <button
-                onClick={() => handleDownload('jpg')}
-                className="w-full flex items-center justify-between p-4 rounded-2xl bg-white hover:bg-gray-50 border border-gray-200 transition-colors duration-200"
-                disabled={isCheckingMembership}
-              >
-                <div className="flex items-center">
-                  <span className="text-lg font-medium text-gray-900">JPG Format</span>
-                  {remainingDownloads !== null && (
-                    <span className="ml-2 text-sm text-gray-500">
-                      ({remainingDownloads} downloads remaining)
-                    </span>
-                  )}
-                </div>
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-              {isCheckingMembership && (
-                <div className="text-center text-sm text-gray-500 mt-2">
-                  Checking membership status...
-                </div>
-              )}
-            </div>
-
-            {/* Member Link */}
-            <div className="pt-4 text-center border-t mt-4">
-              <a
-                href="https://diplomacollective.com/home/for-students/econgraph-pro/"
-                className="inline-flex items-center text-base font-medium text-[#4895ef] hover:text-[#ffc145] transition-colors duration-200"
-              >
-                Already a member? Sign in here to download now
-                <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              </a>
-            </div>
-          </Dialog.Panel>
-        </div>
-      </Dialog>
+      )}
 
       {showPaymentDialog && (
         <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50 p-4">
