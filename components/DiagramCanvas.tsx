@@ -269,6 +269,23 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
   };
 
   const renderSupplyDemand = () => {
+    // Only render supply-demand diagram if type matches
+    if (type !== 'supply-demand') {
+      return (
+        <Layer>
+          <Text
+            text="This diagram type is not yet implemented"
+            x={width / 2}
+            y={height / 2}
+            fontSize={16}
+            fill="#666"
+            align="center"
+            width={width}
+          />
+        </Layer>
+      );
+    }
+
     // Clip the lines at the boundaries
     const clipLine = (points: number[]) => {
       const [x1, y1, x2, y2] = points;

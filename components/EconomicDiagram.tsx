@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { DiagramSettings, defaultSettings } from '../types/diagram';
 import type { Stage } from 'konva/lib/Stage';
-import { Dialog } from '@headlessui/react';
 import Image from 'next/image';
 
 const defaultLabels = {
@@ -275,6 +274,11 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
               Download Diagram
             </button>
           </div>
+          {remainingDownloads !== null && (
+            <div className="text-sm text-gray-600 mt-2 text-center">
+              {remainingDownloads} downloads remaining today
+            </div>
+          )}
         </>
       )}
 
