@@ -178,34 +178,11 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
     }
   };
 
-  const handleOneTimePayment = async () => {
-    try {
-      const response = await fetch('/api/create-payment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          format: selectedFormat,
-          amount: 399 // Amount in cents (3.99 USD)
-        }),
-      });
-
-      const { sessionId } = await response.json();
-      const stripe = await stripePromise;
-      
-      if (stripe) {
-        const { error } = await stripe.redirectToCheckout({ sessionId });
-        if (error) {
-          console.error('Error redirecting to checkout:', error);
-        }
-      }
-    } catch (error) {
-      console.error('Error creating payment session:', error);
-    }
+  const handleEconGraphProSubscription = () => {
+    window.location.href = 'https://diplomacollective.com/register/econ-student-econgraph-pro/';
   };
 
-  const handleSubscription = () => {
+  const handleStudentSubscription = () => {
     window.location.href = 'https://diplomacollective.com/register/econ-student-monthly/';
   };
 
@@ -423,23 +400,35 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
             </div>
 
             <div className="space-y-6">
-              {/* One-time Download */}
+              {/* EconGraph Pro Subscription */}
               <div className="p-4 border rounded-lg">
-                <h4 className="text-lg font-semibold text-gray-900 mb-2">One-time Download</h4>
-                <p className="text-gray-600 mb-4">Perfect for quick, one-off diagrams</p>
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">EconGraph Pro</h4>
+                <ul className="text-gray-600 mb-4 list-disc pl-5 space-y-1">
+                  <li>Full access to EconGraph Pro diagrams</li>
+                  <li>15 downloads per day</li>
+                  <li>High-quality watermark-free downloads</li>
+                </ul>
                 <button
-                  onClick={handleOneTimePayment}
+                  onClick={handleEconGraphProSubscription}
                   className="w-full bg-[#32a567] text-white py-2 px-4 rounded-md hover:bg-[#2a8d57] transition-colors duration-200"
                 >
-                  Pay $3.99
+                  Join for $7.99/month
                 </button>
-                <div className="mt-4 flex items-center justify-center">
+                <div className="mt-4 flex items-center justify-center space-x-6">
                   <Image
                     src="/Powered by Stripe - blurple-300x68-b3bf095.png"
                     alt="Powered by Stripe"
                     width={100}
                     height={32}
                     className="h-8 w-auto"
+                    priority
+                  />
+                  <Image
+                    src="https://www.paypalobjects.com/webstatic/de_DE/i/de-pp-logo-100px.png"
+                    alt="PayPal Logo"
+                    width={100}
+                    height={24}
+                    className="h-6 w-auto"
                     priority
                   />
                 </div>
@@ -449,12 +438,12 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
               <div className="p-4 border rounded-lg">
                 <h4 className="text-lg font-semibold text-gray-900 mb-2">Student Membership</h4>
                 <ul className="text-gray-600 mb-4 list-disc pl-5 space-y-1">
-                  <li>Unlimited access to EconGraph Pro</li>
+                  <li>EconGraph Pro Membership</li>
                   <li>Access to our Step-By-Step IA Guide</li>
                   <li>IB Econ Power Review Pack included</li>
                 </ul>
                 <button
-                  onClick={handleSubscription}
+                  onClick={handleStudentSubscription}
                   className="w-full bg-[#32a567] text-white py-2 px-4 rounded-md hover:bg-[#2a8d57] transition-colors duration-200"
                 >
                   Join for $12.99/month
