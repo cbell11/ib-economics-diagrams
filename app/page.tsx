@@ -1,7 +1,6 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import type { EconomicDiagramProps } from '../components/EconomicDiagram';
 
 const EconomicDiagram = dynamic(() => import('../components/EconomicDiagram'), {
   ssr: false
@@ -10,7 +9,7 @@ const EconomicDiagram = dynamic(() => import('../components/EconomicDiagram'), {
 const defaultDiagram = {
   type: 'supply-demand' as const,
   title: 'Figure 1: Supply and Demand'
-};
+} as const;
 
 export default function Home() {
   return (
