@@ -1,5 +1,7 @@
 export type ElasticityType = 'unitary' | 'relatively-elastic' | 'relatively-inelastic' | 'perfectly-elastic' | 'perfectly-inelastic';
 
+export type DiagramType = 'supply-demand' | 'neo-classical-ad-as' | 'externalities' | 'international-trade';
+
 export interface DiagramSettings {
   title: string;
   xAxisLabel: string;

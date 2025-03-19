@@ -5,6 +5,7 @@ interface DiagramOption {
   type: 'supply-demand' | 'neo-classical-ad-as' | 'externalities' | 'international-trade';
   title: string;
   description: string;
+  comingSoon?: boolean;
 }
 
 interface DiagramSelectorProps {
@@ -15,24 +16,27 @@ const diagramOptions: DiagramOption[] = [
   {
     type: 'supply-demand',
     title: 'Supply and Demand',
-    description: 'Create supply and demand diagrams with various elasticities, interventions, and welfare analysis.'
+    description: 'Create supply and demand diagrams with various elasticities, interventions, and welfare analysis.',
+    comingSoon: false
   },
   {
     type: 'neo-classical-ad-as',
     title: 'Neo-Classical AD-AS',
-    description: 'Coming soon'
+    description: 'Create aggregate demand and supply diagrams with a vertical long-run aggregate supply curve.',
+    comingSoon: true
   },
   {
     type: 'externalities',
     title: 'Externalities',
-    description: 'Coming soon'
+    description: 'Illustrate positive and negative externalities with social and private cost/benefit curves.',
+    comingSoon: true
   },
   {
     type: 'international-trade',
     title: 'International Trade',
-    description: 'Coming soon'
-  },
-
+    description: 'Visualize comparative advantage, terms of trade, and gains from trade between countries.',
+    comingSoon: true
+  }
 ];
 
 const DiagramSelector: React.FC<DiagramSelectorProps> = ({ onSelect }) => {
@@ -51,14 +55,24 @@ const DiagramSelector: React.FC<DiagramSelectorProps> = ({ onSelect }) => {
           {diagramOptions.map((option) => (
             <div
               key={option.type}
-              className="bg-white rounded-2xl shadow-lg overflow-hidden transition-transform hover:scale-105 cursor-pointer"
-              onClick={() => onSelect(option.type, option.title)}
+              className={`bg-white rounded-2xl shadow-lg overflow-hidden transition-transform 
+                ${option.comingSoon 
+                  ? 'opacity-75 cursor-not-allowed' 
+                  : 'hover:scale-105 cursor-pointer'}`}
+              onClick={() => !option.comingSoon && onSelect(option.type, option.title)}
             >
               <div className="p-8">
-                <h3 className="text-2xl font-semibold text-gray-900 mb-4">
-                  {option.title}
-                </h3>
-                <p className="text-gray-600">
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-2xl font-semibold text-gray-900">
+                    {option.title}
+                  </h3>
+                  {option.comingSoon && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      Coming Soon
+                    </span>
+                  )}
+                </div>
+                <p className={`text-gray-600 ${option.comingSoon ? 'opacity-75' : ''}`}>
                   {option.description}
                 </p>
               </div>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
+import { DiagramType } from '../types/diagram';
 
 const EconomicDiagram = dynamic(() => import('../components/EconomicDiagram'), {
   ssr: false
@@ -12,7 +13,7 @@ const DiagramSelector = dynamic(() => import('../components/DiagramSelector'), {
 });
 
 interface DiagramOption {
-  type: 'supply-demand' | 'neo-classical-ad-as' | 'externalities' | 'international-trade';
+  type: DiagramType;
   title: string;
 }
 

@@ -2,14 +2,14 @@
 
 import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { DiagramSettings, defaultSettings } from '../types/diagram';
+import { DiagramSettings, defaultSettings, DiagramType } from '../types/diagram';
 
 const DiagramCanvas = dynamic(() => import('./DiagramCanvas'), {
   ssr: false
 });
 
 export interface EconomicDiagramProps {
-  type: 'supply-demand' | 'ppf' | 'cost-curves';
+  type: DiagramType;
   title: string;
 }
 
@@ -28,12 +28,21 @@ const EconomicDiagram = ({ type, title }: EconomicDiagramProps) => {
     setMounted(true);
   }, []);
 
+  // Only render supply-demand diagram for now
+  if (type !== 'supply-demand') {
+    return (
+      <div className="w-full h-96 flex items-center justify-center">
+        <p className="text-xl text-gray-600">Coming Soon</p>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
       <div className="flex flex-col gap-4">
         <DiagramCanvas
           settings={settings}
-          type={type}
+          type="supply-demand"
           showS2={showS2}
           showS3={showS3}
           showPriceCeiling={showPriceCeiling}

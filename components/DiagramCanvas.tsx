@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, forwardRef, useRef, useImperativeHandle } from 'react';
-import { DiagramSettings } from '../types/diagram';
+import { DiagramSettings, DiagramType } from '../types/diagram';
 import { Stage, Layer, Line, Text, Circle, Rect } from 'react-konva';
 import Konva from 'konva';
 import CanvasControls from './CanvasControls';
@@ -11,7 +11,7 @@ type ElasticityType = 'unitary' | 'relatively-elastic' | 'relatively-inelastic' 
 
 interface DiagramCanvasProps {
   settings: DiagramSettings;
-  type: 'supply-demand' | 'neo-classical-ad-as' | 'externalities' | 'international-trade';
+  type: DiagramType;
   showS2: boolean;
   showS3: boolean;
   showPriceCeiling: boolean;
