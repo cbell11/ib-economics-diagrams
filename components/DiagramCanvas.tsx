@@ -246,12 +246,21 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
 
     // For demand line, extend the line to match the label position
     if (!isSupply) {
+      // Adjust the label position to be higher up
       const labelX = 160 + (canvasHeight - 125) - 20;
       
       // Calculate the new end point to match the label position
       const slope = (clampedEndY - clampedStartY) / (endX - startX);
       const newEndX = labelX;
-      const newEndY = clampedStartY + slope * (newEndX - startX);
+      
+      // Stop the line higher up from the X-axis by adjusting maxY
+      const adjustedMaxY = maxY - 20; // Stop 100 pixels above the X-axis
+      
+      // Calculate new end Y position
+      let newEndY = clampedStartY + slope * (newEndX - startX);
+      
+      // Ensure the line doesn't go below the adjusted maxY
+      newEndY = Math.min(newEndY, adjustedMaxY);
       
       // Only extend the line if S3 is not shown
       if (!showS3) {
@@ -949,7 +958,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
         <Text
           text="D"
           x={demandPoints[2] + 20}
-          y={demandPoints[3] - 20}
+          y={Math.min(demandPoints[3] - 30, canvasHeight - 20)}
           fontSize={settings.fontSize}
           fill={settings.secondaryColor}
         />
