@@ -22,7 +22,7 @@ export interface DiagramSettings {
 }
 
 export const defaultSettings: DiagramSettings = {
-  title: '',
+  title: 'Figure 1: Supply and Demand',
   xAxisLabel: 'Quantity',
   yAxisLabel: 'Price',
   s1Label: '',

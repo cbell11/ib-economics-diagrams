@@ -4,10 +4,11 @@ import { useEffect, useState, forwardRef, useRef, useImperativeHandle } from 're
 import { DiagramSettings } from '../types/diagram';
 import { Stage, Layer, Line, Text, Circle, Rect } from 'react-konva';
 import Konva from 'konva';
+import CanvasControls from './CanvasControls';
+
+type ElasticityType = 'unitary' | 'relatively-elastic' | 'relatively-inelastic' | 'perfectly-elastic' | 'perfectly-inelastic';
 
 interface DiagramCanvasProps {
-  width?: number;
-  height?: number;
   settings: DiagramSettings;
   type: 'supply-demand' | 'ppf' | 'cost-curves';
   showS2: boolean;
@@ -19,6 +20,7 @@ interface DiagramCanvasProps {
   onTogglePriceCeiling: () => void;
   onTogglePriceFloor: () => void;
   onUpdateSettings: (settings: DiagramSettings) => void;
+  mounted: boolean;
 }
 
 interface DiagramCanvasRef {
@@ -26,9 +28,7 @@ interface DiagramCanvasRef {
 }
 
 const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ 
-  settings, 
-  width = 600,
-  height = 400,
+  settings,
   type,
   showS2,
   showS3,
@@ -38,9 +38,9 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   onToggleS3,
   onTogglePriceCeiling,
   onTogglePriceFloor,
-  onUpdateSettings
+  onUpdateSettings,
+  mounted
 }, ref) => {
-  const [mounted, setMounted] = useState(false);
   const [showP2, setShowP2] = useState(false);
   const [showP3, setShowP3] = useState(false);
   const [showShading, setShowShading] = useState(false);
@@ -59,6 +59,13 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   const [subsidyStrokeOpacity, setSubsidyStrokeOpacity] = useState(0.5);
   const [s2Distance, setS2Distance] = useState(40);
   const [s3Distance, setS3Distance] = useState(40);
+  const [canvasWidth, setCanvasWidth] = useState(650);
+  const [canvasHeight, setCanvasHeight] = useState(600);
+  const [canvasSize, setCanvasSize] = useState(1);
+  const [showFormatDialog, setShowFormatDialog] = useState(false);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [isCheckingMembership, setIsCheckingMembership] = useState(false);
+  const [remainingDownloads, setRemainingDownloads] = useState(0);
 
   interface ColorOption {
     color: string;
@@ -80,17 +87,13 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
     getStage: () => stageRef.current
   }));
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   const calculateLinePoints = (isSupply: boolean) => {
     const initialX = 160;
-    const availableWidth = width - 170;
+    const availableWidth = canvasWidth - 170;
     const centerX = initialX + (availableWidth / 2);
     
     // Calculate the center point of the diagram
-    const centerY = (height - 120) / 2 + 80;
+    const centerY = (canvasHeight - 120) / 2 + 80;
     
     // Get elasticity settings
     const elasticity = isSupply ? settings.supplyElasticity : settings.demandElasticity;
@@ -177,12 +180,12 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
     if (isSupply) {
       if (angle >= 90) { // If vertical or beyond (90° or 91°)
         startY = 50; // Start at top
-        endY = height - 70; // End at bottom
+        endY = canvasHeight - 70; // End at bottom
       } else if (angle > 89) { // Handle angles between 89° and 90°
         // Use a linear interpolation for angles near vertical
         const progress = (angle - 89) / 1;
         const verticalStartY = 50;
-        const verticalEndY = height - 70;
+        const verticalEndY = canvasHeight - 70;
         const normalStartY = centerY + Math.tan((89 * Math.PI) / 180) * halfLineWidth;
         const normalEndY = centerY - Math.tan((89 * Math.PI) / 180) * halfLineWidth;
         
@@ -207,7 +210,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
     else {
       if (angleFromVertical < 1) { // If almost vertical (-90°)
         startY = 50; // Start at top
-        endY = height - 70; // End at bottom
+        endY = canvasHeight - 70; // End at bottom
       } else {
         // Use the same center point and vertical offset calculation as supply
         startY = centerY + verticalOffset;
@@ -217,7 +220,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
 
     // Ensure lines stay within bounds
     const minY = 50;
-    const maxY = height - 70;
+    const maxY = canvasHeight - 70;
     
     // Clamp both start and end Y positions
     const clampedStartY = Math.max(minY, Math.min(maxY, startY));
@@ -264,8 +267,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
 
   const calculateEquilibriumPoint = (supplyPoints: number[], demandPoints: number[]) => {
     // Calculate the center point of the diagram
-    const centerX = 160 + (width - 170) / 2;
-    const centerY = (height - 120) / 2 + 50;
+    const centerX = 160 + (canvasWidth - 170) / 2;
+    const centerY = (canvasHeight - 120) / 2 + 50;
 
     // Check for perfectly inelastic lines
     const isSupplyVertical = Math.abs(supplyPoints[2] - supplyPoints[0]) < 0.1;
@@ -314,12 +317,12 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
         <Layer>
           <Text
             text="This diagram type is not yet implemented"
-            x={width / 2}
-            y={height / 2}
+            x={canvasWidth / 2}
+            y={canvasHeight / 2}
             fontSize={16}
             fill="#666"
             align="center"
-            width={width}
+            width={canvasWidth}
           />
         </Layer>
       );
@@ -329,9 +332,9 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
     const clipLine = (points: number[]) => {
       const [x1, y1, x2, y2] = points;
       const minY = 80;  // Top boundary
-      const maxY = height - 70;  // Bottom boundary (x-axis)
+      const maxY = canvasHeight - 70;  // Bottom boundary (x-axis)
       const minX = 160;  // Left boundary
-      const maxX = width - 90;  // Right boundary
+      const maxX = canvasWidth - 90;  // Right boundary
 
       // If the entire line is outside boundaries, return null
       if ((y1 < minY && y2 < minY) || 
@@ -426,8 +429,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
         <Rect
           x={0}
           y={0}
-          width={width + 200}
-          height={height}
+          width={canvasWidth + 200}
+          height={canvasHeight}
           fill="white"
         />
 
@@ -436,8 +439,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
           <Text
             key={position}
             text="Copyright Diploma Collective"
-            x={width * position}
-            y={height / 2}
+            x={canvasWidth * position}
+            y={canvasHeight / 2}
             fontSize={16}
             fill="#4195FF"
             opacity={0.2}
@@ -454,7 +457,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
         {/* Title */}
         <Text
           text={settings.title || ""}
-          x={(width + 200) / 2 - 300}
+          x={(canvasWidth + 200) / 2 - 300}
           y={20}
           fontSize={settings.fontSize * 1.2}
           fill="#000000"
@@ -465,12 +468,12 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
 
         {/* X and Y axes */}
         <Line
-          points={[160, height - 70, 160 + (height - 125), height - 70]}
+          points={[160, canvasHeight - 70, 160 + (canvasHeight - 125), canvasHeight - 70]}
           stroke="#000000"
           strokeWidth={settings.lineThickness * 0.75}
         />
         <Line
-          points={[160, 80, 160, height - 70]}
+          points={[160, 80, 160, canvasHeight - 70]}
           stroke="#000000"
           strokeWidth={settings.lineThickness * 0.75}
         />
@@ -547,7 +550,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               points={[
                 160,
                 equilibrium.y + priceCeilingHeight,
-                160 + (height - 125) * 0.9,
+                160 + (canvasHeight - 125) * 0.9,
                 equilibrium.y + priceCeilingHeight
               ]}
               stroke="#000000"
@@ -555,7 +558,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
             />
             <Text
               text="Pc"
-              x={160 + (height - 125) * 0.9 + 10}
+              x={160 + (canvasHeight - 125) * 0.9 + 10}
               y={equilibrium.y + priceCeilingHeight - 8}
               fontSize={settings.fontSize}
               fill="#000000"
@@ -579,7 +582,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                 <>
                   {/* Supply intersection vertical line */}
                   <Line
-                    points={[supplyIntersectX, ceilingY, supplyIntersectX, height - 70]}
+                    points={[supplyIntersectX, ceilingY, supplyIntersectX, canvasHeight - 70]}
                     stroke="#666666"
                     strokeWidth={1}
                     dash={[4, 4]}
@@ -587,14 +590,14 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                   <Text
                     text="Qs"
                     x={supplyIntersectX - 8}
-                    y={height - 55}
+                    y={canvasHeight - 55}
                     fontSize={settings.fontSize}
                     fill="#000000"
                   />
                   
                   {/* Demand intersection vertical line */}
                   <Line
-                    points={[demandIntersectX, ceilingY, demandIntersectX, height - 70]}
+                    points={[demandIntersectX, ceilingY, demandIntersectX, canvasHeight - 70]}
                     stroke="#666666"
                     strokeWidth={1}
                     dash={[4, 4]}
@@ -602,7 +605,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                   <Text
                     text="Qd"
                     x={demandIntersectX - 8}
-                    y={height - 55}
+                    y={canvasHeight - 55}
                     fontSize={settings.fontSize}
                     fill="#000000"
                   />
@@ -619,7 +622,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               points={[
                 160,
                 equilibrium.y + priceFloorHeight,
-                160 + (height - 125) * 0.9,
+                160 + (canvasHeight - 125) * 0.9,
                 equilibrium.y + priceFloorHeight
               ]}
               stroke="#000000"
@@ -627,7 +630,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
             />
             <Text
               text="Pf"
-              x={160 + (height - 125) * 0.9 + 10}
+              x={160 + (canvasHeight - 125) * 0.9 + 10}
               y={equilibrium.y + priceFloorHeight - 8}
               fontSize={settings.fontSize}
               fill="#000000"
@@ -651,7 +654,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                 <>
                   {/* Supply intersection vertical line */}
                   <Line
-                    points={[supplyIntersectX, floorY, supplyIntersectX, height - 70]}
+                    points={[supplyIntersectX, floorY, supplyIntersectX, canvasHeight - 70]}
                     stroke="#666666"
                     strokeWidth={1}
                     dash={[4, 4]}
@@ -659,14 +662,14 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                   <Text
                     text="Qs"
                     x={supplyIntersectX - 8}
-                    y={height - 55}
+                    y={canvasHeight - 55}
                     fontSize={settings.fontSize}
                     fill="#000000"
                   />
                   
                   {/* Demand intersection vertical line */}
                   <Line
-                    points={[demandIntersectX, floorY, demandIntersectX, height - 70]}
+                    points={[demandIntersectX, floorY, demandIntersectX, canvasHeight - 70]}
                     stroke="#666666"
                     strokeWidth={1}
                     dash={[4, 4]}
@@ -674,7 +677,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                   <Text
                     text="Qd"
                     x={demandIntersectX - 8}
-                    y={height - 55}
+                    y={canvasHeight - 55}
                     fontSize={settings.fontSize}
                     fill="#000000"
                   />
@@ -720,7 +723,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
 
         {/* Original equilibrium point and dotted lines */}
         <Line
-          points={[equilibrium.x, equilibrium.y, equilibrium.x, height - 70]}
+          points={[equilibrium.x, equilibrium.y, equilibrium.x, canvasHeight - 70]}
           stroke="#666666"
           strokeWidth={1}
           dash={[4, 4]}
@@ -749,7 +752,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
         <Text
           text="Qₑ"
           x={equilibrium.x - 8}
-          y={height - 55}
+          y={canvasHeight - 55}
           fontSize={settings.fontSize}
           fill="#000000"
         />
@@ -758,7 +761,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
         {showS2 && shiftedUpEquilibrium && (
           <>
             <Line
-              points={[shiftedUpEquilibrium.x, shiftedUpEquilibrium.y, shiftedUpEquilibrium.x, height - 70]}
+              points={[shiftedUpEquilibrium.x, shiftedUpEquilibrium.y, shiftedUpEquilibrium.x, canvasHeight - 70]}
               stroke="#666666"
               strokeWidth={1}
               dash={[4, 4]}
@@ -787,7 +790,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
             <Text
               text="Q₁"
               x={shiftedUpEquilibrium.x - 8}
-              y={height - 55}
+              y={canvasHeight - 55}
               fontSize={settings.fontSize}
               fill="#000000"
             />
@@ -830,7 +833,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
         {showS3 && shiftedDownEquilibrium && (
           <>
             <Line
-              points={[shiftedDownEquilibrium.x, shiftedDownEquilibrium.y, shiftedDownEquilibrium.x, height - 70]}
+              points={[shiftedDownEquilibrium.x, shiftedDownEquilibrium.y, shiftedDownEquilibrium.x, canvasHeight - 70]}
               stroke="#666666"
               strokeWidth={1}
               dash={[4, 4]}
@@ -859,7 +862,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
             <Text
               text="Q₂"
               x={shiftedDownEquilibrium.x - 8}
-              y={height - 55}
+              y={canvasHeight - 55}
               fontSize={settings.fontSize}
               fill="#000000"
             />
@@ -905,18 +908,18 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
           y={65}
           fontSize={settings.fontSize}
           fill="#000000"
-          width={110}
+          width={90}
           align="center"
           wrap="word"
           wordBreak="keep-all"
         />
         <Text
           text={settings.xAxisLabel}
-          x={width - 100}
-          y={height - 55}
+          x={canvasWidth - 100}
+          y={canvasHeight - 55}
           fontSize={settings.fontSize}
           fill="#000000"
-          width={100}
+          width={200}
           align="center"
           wrap="word"
           wordBreak="keep-all"
@@ -957,13 +960,71 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
     );
   };
 
+  const handleDownload = async (format: 'png' | 'jpg') => {
+    setShowFormatDialog(false);
+    
+    // Get the user ID from the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get('userId');
+
+    if (!userId) {
+      setShowPaymentDialog(true);
+      return;
+    }
+
+    setIsCheckingMembership(true);
+
+    try {
+      // Check membership status with MemberPress API
+      const response = await fetch(`/api/check-membership?userId=${userId}`);
+      const data = await response.json();
+
+      if (!data.hasMembership) {
+        setShowPaymentDialog(true);
+        return;
+      }
+
+      // If membership is valid, proceed with download
+      if (stageRef.current) {
+        const dataURL = stageRef.current.toDataURL({ 
+          pixelRatio: 2,
+          mimeType: format === 'png' ? 'image/png' : 'image/jpeg'
+        });
+        
+        const link = document.createElement('a');
+        link.download = `economic-diagram.${format}`;
+        link.href = dataURL;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (error) {
+      console.error('Error checking membership:', error);
+      setShowPaymentDialog(true);
+    } finally {
+      setIsCheckingMembership(false);
+    }
+  };
+
+  const handleEconGraphProSubscription = () => {
+    window.location.href = 'https://diplomacollective.com/register/econ-student-econgraph-pro/';
+  };
+
+  const handleStudentSubscription = () => {
+    window.location.href = 'https://diplomacollective.com/register/econ-student-monthly/';
+  };
+
   if (!mounted) {
     return (
       <div style={{ 
-        width: width + 200, 
-        minHeight: height + 300,
+        width: (canvasWidth + 200) * canvasSize, 
+        minHeight: (canvasHeight + 300) * canvasSize,
         paddingLeft: '100px',
-        paddingBottom: '40px'
+        paddingBottom: '40px',
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'relative',
+        overflow: 'hidden'
       }}>
         <div>Loading...</div>
       </div>
@@ -974,11 +1035,20 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
     <div className="flex gap-6">
       {/* Left side - Canvas */}
       <div style={{ 
-        width: width + 200, 
-        minHeight: height + 300,
-        paddingBottom: '40px'
+        width: (canvasWidth + 200) * canvasSize, 
+        minHeight: (canvasHeight + 300) * canvasSize,
+        paddingBottom: '40px',
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'relative',
+        overflow: 'hidden'
       }}>
-        <Stage ref={stageRef} width={width + 200} height={height}>
+        <Stage 
+          ref={stageRef} 
+          width={(canvasWidth + 200) * canvasSize} 
+          height={canvasHeight * canvasSize}
+          scale={{ x: canvasSize, y: canvasSize }}
+        >
           {renderSupplyDemand()}
         </Stage>
         {mounted && (
@@ -987,7 +1057,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
             display: 'flex', 
             flexDirection: 'column', 
             gap: '10px',
-            maxWidth: width + 200
+            maxWidth: (canvasWidth + 200) * canvasSize
           }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <div style={{ 
@@ -1010,69 +1080,73 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                   onClick={onToggleS2}
                   style={{
                     padding: '8px 16px',
-                    backgroundColor: showS2 ? '#4895ef' : '#f5f5f5',
-                    color: showS2 ? 'white' : '#1f2937',
-                    border: 'none',
-                    borderRadius: '4px',
+                    backgroundColor: showS2 ? '#4895ef' : '#ffffff',
+                    color: showS2 ? '#ffffff' : '#1f2937',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '6px',
                     cursor: 'pointer',
                     fontSize: '14px',
                     transition: 'all 0.2s',
                     fontWeight: 500,
-                    flex: '0 0 auto'
+                    flex: '0 0 auto',
+                    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
                   }}
                 >
-                  Tax
+                  Add a Tax
                 </button>
                 <button
                   onClick={onToggleS3}
                   style={{
                     padding: '8px 16px',
-                    backgroundColor: showS3 ? '#4895ef' : '#f5f5f5',
-                    color: showS3 ? 'white' : '#1f2937',
-                    border: 'none',
-                    borderRadius: '4px',
+                    backgroundColor: showS3 ? '#4895ef' : '#ffffff',
+                    color: showS3 ? '#ffffff' : '#1f2937',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '6px',
                     cursor: 'pointer',
                     fontSize: '14px',
                     transition: 'all 0.2s',
                     fontWeight: 500,
-                    flex: '0 0 auto'
+                    flex: '0 0 auto',
+                    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
                   }}
                 >
-                  Subsidy
+                  Add a Subsidy
                 </button>
                 <button
                   onClick={onTogglePriceCeiling}
                   style={{
                     padding: '8px 16px',
-                    backgroundColor: showPriceCeiling ? '#32a567' : '#f5f5f5',
-                    color: showPriceCeiling ? 'white' : '#1f2937',
-                    border: 'none',
-                    borderRadius: '4px',
+                    backgroundColor: showPriceCeiling ? '#4895ef' : '#ffffff',
+                    color: showPriceCeiling ? '#ffffff' : '#1f2937',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '6px',
                     cursor: 'pointer',
                     fontSize: '14px',
                     transition: 'all 0.2s',
                     fontWeight: 500,
-                    flex: '0 0 auto'
+                    flex: '0 0 auto',
+                    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
                   }}
                 >
-                  Price Ceiling
+                  Add a Price Ceiling
                 </button>
                 <button
                   onClick={onTogglePriceFloor}
                   style={{
                     padding: '8px 16px',
-                    backgroundColor: showPriceFloor ? '#32a567' : '#f5f5f5',
-                    color: showPriceFloor ? 'white' : '#1f2937',
-                    border: 'none',
-                    borderRadius: '4px',
+                    backgroundColor: showPriceFloor ? '#4895ef' : '#ffffff',
+                    color: showPriceFloor ? '#ffffff' : '#1f2937',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '6px',
                     cursor: 'pointer',
                     fontSize: '14px',
                     transition: 'all 0.2s',
                     fontWeight: 500,
-                    flex: '0 0 auto'
+                    flex: '0 0 auto',
+                    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
                   }}
                 >
-                  Price Floor
+                  Add a Price Floor
                 </button>
               </div>
             </div>
@@ -1494,6 +1568,18 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
           <div className="grid grid-cols-2 gap-6">
             {/* Left Column */}
             <div className="space-y-6">
+              {/* Canvas Controls - Hidden */}
+              <div className="hidden">
+                <CanvasControls
+                  width={canvasWidth}
+                  height={canvasHeight}
+                  size={canvasSize}
+                  onUpdateWidth={setCanvasWidth}
+                  onUpdateHeight={setCanvasHeight}
+                  onUpdateSize={setCanvasSize}
+                />
+              </div>
+
               {/* Title Input */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-black">Title</label>
@@ -1617,7 +1703,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                     <label className="block text-sm text-black mb-1">Supply Elasticity</label>
                     <select
                       value={settings.supplyElasticity}
-                      onChange={(e) => onUpdateSettings({ ...settings, supplyElasticity: e.target.value as any })}
+                      onChange={(e) => onUpdateSettings({ ...settings, supplyElasticity: e.target.value as ElasticityType })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                     >
                       <option value="unitary">Unitary</option>
@@ -1631,7 +1717,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                     <label className="block text-sm text-black mb-1">Demand Elasticity</label>
                     <select
                       value={settings.demandElasticity}
-                      onChange={(e) => onUpdateSettings({ ...settings, demandElasticity: e.target.value as any })}
+                      onChange={(e) => onUpdateSettings({ ...settings, demandElasticity: e.target.value as ElasticityType })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                     >
                       <option value="unitary">Unitary</option>
@@ -1642,7 +1728,142 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                     </select>
                   </div>
                 </div>
+
+                {/* Download Diagram Button */}
+                <div className="mt-4">
+                  <button
+                    onClick={() => setShowFormatDialog(true)}
+                    className="w-full px-4 py-2 text-white rounded-md transition-colors flex items-center justify-center gap-2"
+                    style={{
+                      backgroundColor: '#40b36e',
+                      fontSize: '14px',
+                      fontWeight: 500
+                    }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                    Download Diagram
+                  </button>
+                </div>
               </div>
+
+              {/* Format Dialog */}
+              {showFormatDialog && (
+                <div className="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center z-50">
+                  <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-lg">
+                    <div className="flex justify-between items-start mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Choose Format</h3>
+                      <button
+                        onClick={() => setShowFormatDialog(false)}
+                        className="text-gray-400 hover:text-gray-500"
+                      >
+                        <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div className="space-y-3">
+                      <button
+                        onClick={() => handleDownload('png')}
+                        className="w-full py-3 px-4 bg-[#40b36e] text-white text-center font-medium rounded-md hover:bg-[#379e61] transition-colors"
+                      >
+                        Download as PNG
+                      </button>
+                      <button
+                        onClick={() => handleDownload('jpg')}
+                        className="w-full py-3 px-4 bg-[#40b36e] text-white text-center font-medium rounded-md hover:bg-[#379e61] transition-colors"
+                      >
+                        Download as JPG
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Payment Dialog */}
+              {showPaymentDialog && (
+                <div className="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center z-50">
+                  <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 shadow-lg">
+                    <div className="flex justify-between items-start mb-4">
+                      <h3 className="text-xl font-semibold text-gray-900">Choose Your Plan</h3>
+                      <button
+                        onClick={() => setShowPaymentDialog(false)}
+                        className="text-gray-400 hover:text-gray-500"
+                      >
+                        <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
+                    
+                    <div className="space-y-6">
+                      {/* EconGraph Pro */}
+                      <div className="space-y-4">
+                        <h4 className="text-lg font-medium text-gray-900">EconGraph Pro</h4>
+                        <ul className="space-y-2 text-gray-600">
+                          <li>• Full access to EconGraph Pro diagrams</li>
+                          <li>• 15 downloads per day</li>
+                          <li>• High-quality watermark-free downloads</li>
+                        </ul>
+                        <button
+                          onClick={handleEconGraphProSubscription}
+                          className="w-full py-3 px-4 bg-[#40b36e] text-white text-center font-medium rounded-md hover:bg-[#379e61] transition-colors"
+                        >
+                          Join for $7.99/month
+                        </button>
+                      </div>
+
+                      {/* Student Membership */}
+                      <div className="space-y-4">
+                        <h4 className="text-lg font-medium text-gray-900">Student Membership</h4>
+                        <ul className="space-y-2 text-gray-600">
+                          <li>• EconGraph Pro Membership</li>
+                          <li>• Access to our Step-By-Step IA Guide</li>
+                          <li>• IB Econ Power Review Pack included</li>
+                        </ul>
+                        <button
+                          onClick={handleStudentSubscription}
+                          className="w-full py-3 px-4 bg-[#40b36e] text-white text-center font-medium rounded-md hover:bg-[#379e61] transition-colors"
+                        >
+                          Join for $12.99/month
+                        </button>
+                      </div>
+
+                      {/* Payment Method Logos */}
+                      <div className="flex items-center justify-center gap-6 pt-4">
+                        <img 
+                          src="/Powered by Stripe - blurple-300x68-b3bf095.png"
+                          alt="Powered by Stripe" 
+                          className="h-7 object-contain"
+                        />
+                        <img 
+                          src="https://www.paypalobjects.com/webstatic/de_DE/i/de-pp-logo-150px.png"
+                          alt="PayPal" 
+                          className="h-8 object-contain"
+                        />
+                      </div>
+
+                      {/* Sign In Link */}
+                      <div className="flex items-center justify-center">
+                        <a 
+                          href="#" 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            window.location.href = "https://econograph.diplomacollective.com/sign-in";
+                          }}
+                          className="text-blue-500 hover:text-blue-600 flex items-center gap-2 text-sm"
+                        >
+                          Already a member? Sign in here to download now
+                          <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
