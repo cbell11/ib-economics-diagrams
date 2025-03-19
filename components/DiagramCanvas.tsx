@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, forwardRef, useRef, useImperativeHandle } from 'react';
+import { useState, forwardRef, useRef, useImperativeHandle } from 'react';
 import { DiagramSettings } from '../types/diagram';
 import { Stage, Layer, Line, Text, Circle, Rect } from 'react-konva';
 import Konva from 'konva';
@@ -246,7 +246,6 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
 
     // For demand line, extend the line to match the label position
     if (!isSupply) {
-      const labelOffset = 20;
       const labelX = 160 + (canvasHeight - 125) - 20;
       
       // Calculate the new end point to match the label position
