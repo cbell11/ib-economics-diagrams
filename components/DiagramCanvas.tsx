@@ -5,6 +5,7 @@ import { DiagramSettings } from '../types/diagram';
 import { Stage, Layer, Line, Text, Circle, Rect } from 'react-konva';
 import Konva from 'konva';
 import CanvasControls from './CanvasControls';
+import Image from 'next/image';
 
 type ElasticityType = 'unitary' | 'relatively-elastic' | 'relatively-inelastic' | 'perfectly-elastic' | 'perfectly-inelastic';
 
@@ -64,8 +65,6 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   const [canvasSize, setCanvasSize] = useState(1);
   const [showFormatDialog, setShowFormatDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [isCheckingMembership, setIsCheckingMembership] = useState(false);
-  const [remainingDownloads, setRemainingDownloads] = useState(0);
 
   interface ColorOption {
     color: string;
@@ -247,14 +246,13 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
 
     // For demand line, extend the line to match the label position
     if (!isSupply) {
-      const labelOffset = 20; // Distance from the line end to the label
-      const labelX = endX + labelOffset;
-      const labelY = endY - labelOffset;
+      const labelOffset = 20;
+      const labelX = 160 + (canvasHeight - 125) - 20;
       
       // Calculate the new end point to match the label position
-      const slope = (endY - startY) / (endX - startX);
+      const slope = (clampedEndY - clampedStartY) / (endX - startX);
       const newEndX = labelX;
-      const newEndY = startY + slope * (newEndX - startX);
+      const newEndY = clampedStartY + slope * (newEndX - startX);
       
       // Only extend the line if S3 is not shown
       if (!showS3) {
@@ -972,8 +970,6 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
       return;
     }
 
-    setIsCheckingMembership(true);
-
     try {
       // Check membership status with MemberPress API
       const response = await fetch(`/api/check-membership?userId=${userId}`);
@@ -1001,8 +997,6 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
     } catch (error) {
       console.error('Error checking membership:', error);
       setShowPaymentDialog(true);
-    } finally {
-      setIsCheckingMembership(false);
     }
   };
 
@@ -1180,14 +1174,16 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                   onClick={() => setShowP2(!showP2)}
                   style={{
                     padding: '8px 16px',
-                    backgroundColor: showP2 ? '#4CAF50' : '#f0f0f0',
-                    color: showP2 ? 'white' : 'black',
-                    border: 'none',
+                    backgroundColor: showP2 ? '#4CAF50' : '#ffffff',
+                    color: showP2 ? 'white' : '#1f2937',
+                    border: '1px solid #e5e7eb',
                     borderRadius: '4px',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    transition: 'all 0.2s'
                   }}
                 >
-                  Show Tax Distance
+                  Show Tax Distance/Govt. Rev
                 </button>
                 <input
                   type="range"
@@ -1432,11 +1428,13 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                   onClick={() => setShowP3(!showP3)}
                   style={{
                     padding: '8px 16px',
-                    backgroundColor: showP3 ? '#4CAF50' : '#f0f0f0',
-                    color: showP3 ? 'white' : 'black',
-                    border: 'none',
+                    backgroundColor: showP3 ? '#4CAF50' : '#ffffff',
+                    color: showP3 ? 'white' : '#1f2937',
+                    border: '1px solid #e5e7eb',
                     borderRadius: '4px',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    transition: 'all 0.2s'
                   }}
                 >
                   Show Subsidy Distance
@@ -1832,16 +1830,22 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
 
                       {/* Payment Method Logos */}
                       <div className="flex items-center justify-center gap-6 pt-4">
-                        <img 
-                          src="/Powered by Stripe - blurple-300x68-b3bf095.png"
-                          alt="Powered by Stripe" 
-                          className="h-7 object-contain"
-                        />
-                        <img 
-                          src="https://www.paypalobjects.com/webstatic/de_DE/i/de-pp-logo-150px.png"
-                          alt="PayPal" 
-                          className="h-8 object-contain"
-                        />
+                        <div className="relative h-7 w-[150px]">
+                          <Image
+                            src="/Powered by Stripe - blurple-300x68-b3bf095.png"
+                            alt="Powered by Stripe"
+                            fill
+                            style={{ objectFit: 'contain' }}
+                          />
+                        </div>
+                        <div className="relative h-8 w-[150px]">
+                          <Image
+                            src="https://www.paypalobjects.com/webstatic/de_DE/i/de-pp-logo-150px.png"
+                            alt="PayPal"
+                            fill
+                            style={{ objectFit: 'contain' }}
+                          />
+                        </div>
                       </div>
 
                       {/* Sign In Link */}
