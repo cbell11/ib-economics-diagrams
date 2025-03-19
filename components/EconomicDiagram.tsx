@@ -5,6 +5,8 @@ import dynamic from 'next/dynamic';
 import { DiagramSettings, defaultSettings } from '../types/diagram';
 import type { Stage } from 'konva/lib/Stage';
 import Image from 'next/image';
+import DiagramCanvas from './DiagramCanvas';
+import DiagramControls from './DiagramControls';
 
 const defaultLabels = {
   'supply-demand': {
@@ -25,8 +27,8 @@ const defaultLabels = {
 } as const;
 
 // Load components dynamically with no SSR
-const DiagramCanvas = dynamic(() => import('./DiagramCanvas'), { ssr: false });
-const DiagramControls = dynamic(() => import('./DiagramControls'), { ssr: false });
+const DiagramCanvasComponent = dynamic(() => import('./DiagramCanvas'), { ssr: false });
+const DiagramControlsComponent = dynamic(() => import('./DiagramControls'), { ssr: false });
 
 interface EconomicDiagramProps {
   type: 'supply-demand' | 'ppf' | 'cost-curves';
@@ -69,14 +71,13 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
   const [stageSize, setStageSize] = useState({ width: 600, height: 400 });
   const [showFormatDialog, setShowFormatDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [settings, setSettings] = useState<DiagramSettings>({
-    ...defaultSettings,
-    title: title || defaultLabels[type].title,
-    xAxisLabel: defaultLabels[type].xAxis,
-    yAxisLabel: defaultLabels[type].yAxis
-  });
+  const [settings, setSettings] = useState<DiagramSettings>(defaultSettings);
   const [isCheckingMembership, setIsCheckingMembership] = useState(false);
   const [remainingDownloads, setRemainingDownloads] = useState<number | null>(null);
+  const [showS2, setShowS2] = useState(false);
+  const [showS3, setShowS3] = useState(false);
+  const [showPriceCeiling, setShowPriceCeiling] = useState(false);
+  const [showPriceFloor, setShowPriceFloor] = useState(false);
 
   // Mark component as client-side rendered
   useEffect(() => {
@@ -246,189 +247,203 @@ export default function EconomicDiagram({ type, title }: EconomicDiagramProps) {
     }
   };
 
-  const handleSettingsChange = (newSettings: DiagramSettings) => {
-    setSettings(newSettings);
-  };
-
   return (
-    <div className="w-full space-y-4" ref={containerRef}>
+    <div className="w-full h-screen bg-gray-50 p-4" ref={containerRef}>
       {!isClient ? <LoadingPlaceholder /> : (
-        <>
-          <DiagramCanvas
-            ref={canvasRef}
-            width={stageSize.width}
-            height={stageSize.height}
-            settings={settings}
-            type={type}
-          />
-          <DiagramControls
-            settings={settings}
-            onUpdate={handleSettingsChange}
-          />
-          <div className="flex justify-end">
+        <div className="h-full max-w-[1600px] mx-auto flex flex-col space-y-4">
+          {/* Download Section - Top */}
+          <div className="flex justify-between items-center bg-white rounded-lg shadow-sm p-2">
             <button
               onClick={() => setShowFormatDialog(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-[#32a567] hover:bg-[#2a8d57] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#32a567]"
+              className="inline-flex items-center px-2 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#32a567] hover:bg-[#2a8d57] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#32a567]"
             >
               <DownloadIcon />
               Download Diagram
             </button>
+            {remainingDownloads !== null && (
+              <div className="text-sm text-gray-600">
+                {remainingDownloads} downloads remaining today
+              </div>
+            )}
           </div>
-          {remainingDownloads !== null && (
-            <div className="text-sm text-gray-600 mt-2 text-center">
-              {remainingDownloads} downloads remaining today
+
+          {/* Main Container */}
+          <div className="bg-white rounded-lg shadow-sm p-4 h-[calc(100vh-8rem)]">
+            <div className="flex items-center justify-between mb-2 pb-1 border-b">
+              <h3 className="text-sm font-semibold text-gray-900">1. Diagram Canvas</h3>
+              <span className="text-xs text-gray-500">Main visualization area</span>
+            </div>
+            <div className="flex items-center justify-start h-[calc(100%-2rem)]">
+              <DiagramCanvas
+                ref={canvasRef}
+                width={450}
+                height={400}
+                settings={settings}
+                type={type}
+                showS2={showS2}
+                showS3={showS3}
+                showPriceCeiling={showPriceCeiling}
+                showPriceFloor={showPriceFloor}
+                onToggleS2={() => setShowS2(!showS2)}
+                onToggleS3={() => setShowS3(!showS3)}
+                onTogglePriceCeiling={() => setShowPriceCeiling(!showPriceCeiling)}
+                onTogglePriceFloor={() => setShowPriceFloor(!showPriceFloor)}
+                onUpdateSettings={setSettings}
+              />
+            </div>
+          </div>
+
+          {/* Format Dialog */}
+          {showFormatDialog && (
+            <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50 p-4">
+              <div 
+                className="bg-white rounded-lg p-6 shadow-xl max-w-sm w-full mx-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-semibold text-gray-900">Choose Format</h3>
+                  <button
+                    onClick={() => setShowFormatDialog(false)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  <button
+                    onClick={() => handleDownload('png')}
+                    disabled={isCheckingMembership}
+                    className="w-full bg-[#32a567] text-white py-2 px-4 rounded-md hover:bg-[#2a8d57] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                  >
+                    Download as PNG
+                  </button>
+                  <button
+                    onClick={() => handleDownload('jpg')}
+                    disabled={isCheckingMembership}
+                    className="w-full bg-[#32a567] text-white py-2 px-4 rounded-md hover:bg-[#2a8d57] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                  >
+                    Download as JPG
+                  </button>
+                </div>
+              </div>
             </div>
           )}
-        </>
-      )}
 
-      {showFormatDialog && (
-        <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50 p-4">
-          <div 
-            className="bg-white rounded-lg p-6 shadow-xl max-w-sm w-full mx-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">Choose Format</h3>
-              <button
-                onClick={() => setShowFormatDialog(false)}
-                className="text-gray-500 hover:text-gray-700"
+          {/* Payment Dialog */}
+          {showPaymentDialog && (
+            <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50 p-4">
+              <div 
+                className="bg-white rounded-lg p-6 shadow-xl max-w-md w-full mx-auto"
+                onClick={(e) => e.stopPropagation()}
               >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="space-y-4">
-              <button
-                onClick={() => handleDownload('png')}
-                disabled={isCheckingMembership}
-                className="w-full bg-[#32a567] text-white py-2 px-4 rounded-md hover:bg-[#2a8d57] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-              >
-                Download as PNG
-              </button>
-              <button
-                onClick={() => handleDownload('jpg')}
-                disabled={isCheckingMembership}
-                className="w-full bg-[#32a567] text-white py-2 px-4 rounded-md hover:bg-[#2a8d57] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-              >
-                Download as JPG
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showPaymentDialog && (
-        <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50 p-4">
-          <div 
-            className="bg-white rounded-lg p-6 shadow-xl max-w-md w-full mx-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">Choose Your Plan</h3>
-              <button
-                onClick={() => setShowPaymentDialog(false)}
-                className="text-gray-500 hover:text-gray-700 p-2"
-              >
-                <svg 
-                  className="w-5 h-5" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            <div className="space-y-6">
-              {/* EconGraph Pro Subscription */}
-              <div className="p-4 border rounded-lg">
-                <h4 className="text-lg font-semibold text-gray-900 mb-2">EconGraph Pro</h4>
-                <ul className="text-gray-600 mb-4 list-disc pl-5 space-y-1">
-                  <li>Full access to EconGraph Pro diagrams</li>
-                  <li>15 downloads per day</li>
-                  <li>High-quality watermark-free downloads</li>
-                </ul>
-                <button
-                  onClick={handleEconGraphProSubscription}
-                  className="w-full bg-[#32a567] text-white py-2 px-4 rounded-md hover:bg-[#2a8d57] transition-colors duration-200"
-                >
-                  Join for $7.99/month
-                </button>
-                <div className="mt-4 flex items-center justify-center space-x-6">
-                  <Image
-                    src="/Powered by Stripe - blurple-300x68-b3bf095.png"
-                    alt="Powered by Stripe"
-                    width={100}
-                    height={32}
-                    className="h-8 w-auto"
-                    priority
-                  />
-                  <Image
-                    src="https://www.paypalobjects.com/webstatic/de_DE/i/de-pp-logo-100px.png"
-                    alt="PayPal Logo"
-                    width={100}
-                    height={24}
-                    className="h-6 w-auto"
-                    priority
-                  />
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-semibold text-gray-900">Choose Your Plan</h3>
+                  <button
+                    onClick={() => setShowPaymentDialog(false)}
+                    className="text-gray-500 hover:text-gray-700 p-2"
+                  >
+                    <svg 
+                      className="w-5 h-5" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        strokeWidth={2} 
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
                 </div>
-              </div>
 
-              {/* Student Membership */}
-              <div className="p-4 border rounded-lg">
-                <h4 className="text-lg font-semibold text-gray-900 mb-2">Student Membership</h4>
-                <ul className="text-gray-600 mb-4 list-disc pl-5 space-y-1">
-                  <li>EconGraph Pro Membership</li>
-                  <li>Access to our Step-By-Step IA Guide</li>
-                  <li>IB Econ Power Review Pack included</li>
-                </ul>
-                <button
-                  onClick={handleStudentSubscription}
-                  className="w-full bg-[#32a567] text-white py-2 px-4 rounded-md hover:bg-[#2a8d57] transition-colors duration-200"
-                >
-                  Join for $12.99/month
-                </button>
-                <div className="mt-4 flex items-center justify-center space-x-6">
-                  <Image
-                    src="/Powered by Stripe - blurple-300x68-b3bf095.png"
-                    alt="Powered by Stripe"
-                    width={100}
-                    height={32}
-                    className="h-8 w-auto"
-                    priority
-                  />
-                  <Image
-                    src="https://www.paypalobjects.com/webstatic/de_DE/i/de-pp-logo-100px.png"
-                    alt="PayPal Logo"
-                    width={100}
-                    height={24}
-                    className="h-6 w-auto"
-                    priority
-                  />
+                <div className="space-y-6">
+                  {/* EconGraph Pro Subscription */}
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-2">EconGraph Pro</h4>
+                    <ul className="text-gray-600 mb-4 list-disc pl-5 space-y-1">
+                      <li>Full access to EconGraph Pro diagrams</li>
+                      <li>15 downloads per day</li>
+                      <li>High-quality watermark-free downloads</li>
+                    </ul>
+                    <button
+                      onClick={handleEconGraphProSubscription}
+                      className="w-full bg-[#32a567] text-white py-2 px-4 rounded-md hover:bg-[#2a8d57] transition-colors duration-200"
+                    >
+                      Join for $7.99/month
+                    </button>
+                    <div className="mt-4 flex items-center justify-center space-x-6">
+                      <Image
+                        src="/Powered by Stripe - blurple-300x68-b3bf095.png"
+                        alt="Powered by Stripe"
+                        width={100}
+                        height={32}
+                        className="h-8 w-auto"
+                        priority
+                      />
+                      <Image
+                        src="https://www.paypalobjects.com/webstatic/de_DE/i/de-pp-logo-100px.png"
+                        alt="PayPal Logo"
+                        width={100}
+                        height={24}
+                        className="h-6 w-auto"
+                        priority
+                      />
+                    </div>
+                  </div>
+
+                  {/* Student Membership */}
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-2">Student Membership</h4>
+                    <ul className="text-gray-600 mb-4 list-disc pl-5 space-y-1">
+                      <li>EconGraph Pro Membership</li>
+                      <li>Access to our Step-By-Step IA Guide</li>
+                      <li>IB Econ Power Review Pack included</li>
+                    </ul>
+                    <button
+                      onClick={handleStudentSubscription}
+                      className="w-full bg-[#32a567] text-white py-2 px-4 rounded-md hover:bg-[#2a8d57] transition-colors duration-200"
+                    >
+                      Join for $12.99/month
+                    </button>
+                    <div className="mt-4 flex items-center justify-center space-x-6">
+                      <Image
+                        src="/Powered by Stripe - blurple-300x68-b3bf095.png"
+                        alt="Powered by Stripe"
+                        width={100}
+                        height={32}
+                        className="h-8 w-auto"
+                        priority
+                      />
+                      <Image
+                        src="https://www.paypalobjects.com/webstatic/de_DE/i/de-pp-logo-100px.png"
+                        alt="PayPal Logo"
+                        width={100}
+                        height={24}
+                        className="h-6 w-auto"
+                        priority
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 text-center border-t mt-4">
+                  <a
+                    href="https://diplomacollective.com/home/for-students/econgraph-pro/"
+                    className="inline-flex items-center text-base font-medium text-[#4895ef] hover:text-[#ffc145] transition-colors duration-200"
+                  >
+                    Already a member? Sign in here to download now
+                    <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  </a>
                 </div>
               </div>
             </div>
-
-            <div className="pt-4 text-center border-t mt-4">
-              <a
-                href="https://diplomacollective.com/home/for-students/econgraph-pro/"
-                className="inline-flex items-center text-base font-medium text-[#4895ef] hover:text-[#ffc145] transition-colors duration-200"
-              >
-                Already a member? Sign in here to download now
-                <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              </a>
-            </div>
-          </div>
+          )}
         </div>
       )}
     </div>

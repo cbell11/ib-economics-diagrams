@@ -6,27 +6,46 @@ import { Stage, Layer, Line, Text, Circle, Rect } from 'react-konva';
 import Konva from 'konva';
 
 interface DiagramCanvasProps {
+  width?: number;
+  height?: number;
   settings: DiagramSettings;
-  width: number;
-  height: number;
-  type: 'supply-demand' | 'ppf' | 'cost-curves' | 'subsidy' | 'tax' | 'price-ceiling' | 'price-floor';
+  type: 'supply-demand' | 'ppf' | 'cost-curves';
+  showS2: boolean;
+  showS3: boolean;
+  showPriceCeiling: boolean;
+  showPriceFloor: boolean;
+  onToggleS2: () => void;
+  onToggleS3: () => void;
+  onTogglePriceCeiling: () => void;
+  onTogglePriceFloor: () => void;
+  onUpdateSettings: (settings: DiagramSettings) => void;
 }
 
 interface DiagramCanvasRef {
   getStage: () => Konva.Stage | null;
 }
 
-const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settings, width, height, type }, ref) => {
+const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ 
+  settings, 
+  width = 600,
+  height = 400,
+  type,
+  showS2,
+  showS3,
+  showPriceCeiling,
+  showPriceFloor,
+  onToggleS2,
+  onToggleS3,
+  onTogglePriceCeiling,
+  onTogglePriceFloor,
+  onUpdateSettings
+}, ref) => {
   const [mounted, setMounted] = useState(false);
-  const [showS2, setShowS2] = useState(false);
-  const [showS3, setShowS3] = useState(false);
   const [showP2, setShowP2] = useState(false);
   const [showP3, setShowP3] = useState(false);
   const [showShading, setShowShading] = useState(false);
   const [showSubsidyShading, setShowSubsidyShading] = useState(false);
   const [showWelfareLoss, setShowWelfareLoss] = useState(false);
-  const [showPriceCeiling, setShowPriceCeiling] = useState(false);
-  const [showPriceFloor, setShowPriceFloor] = useState(false);
   const [priceCeilingHeight, setPriceCeilingHeight] = useState(40);
   const [priceFloorHeight, setPriceFloorHeight] = useState(-40);
   const [welfareLossColor, setWelfareLossColor] = useState('#666666'); // Dark gray default
@@ -80,7 +99,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
       switch (elasticity) {
         case 'unitary':
           angle = 45;
-          lineLength = 80;
+          lineLength = 100;
           break;
         case 'relatively-elastic':
           angle = 20;
@@ -110,11 +129,11 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
           break;
         case 'relatively-elastic':
           angle = -20;
-          lineLength = 100;
+          lineLength = 80;
           break;
         case 'relatively-inelastic':
-          angle = -75;
-          lineLength = 95;
+          angle = -65;
+          lineLength = 90;
           break;
         case 'perfectly-elastic':
           angle = 0;
@@ -188,6 +207,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
         startY = 50; // Start at top
         endY = height - 70; // End at bottom
       } else {
+        // Use the same center point and vertical offset calculation as supply
         startY = centerY + verticalOffset;
         endY = centerY - verticalOffset;
       }
@@ -218,6 +238,23 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
         centerX + newHalfLineWidth,
         clampedEndY
       ];
+    }
+
+    // For demand line, extend the line to match the label position
+    if (!isSupply) {
+      const labelOffset = 20; // Distance from the line end to the label
+      const labelX = endX + labelOffset;
+      const labelY = endY - labelOffset;
+      
+      // Calculate the new end point to match the label position
+      const slope = (endY - startY) / (endX - startX);
+      const newEndX = labelX;
+      const newEndY = startY + slope * (newEndX - startX);
+      
+      // Only extend the line if S3 is not shown
+      if (!showS3) {
+        return [startX, startY, newEndX, newEndY];
+      }
     }
 
     return [startX, clampedStartY, endX, clampedEndY];
@@ -290,15 +327,13 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
     const clipLine = (points: number[]) => {
       const [x1, y1, x2, y2] = points;
       const minY = 80;  // Top boundary
-      const maxY = height - 70;  // Bottom boundary
+      const maxY = height - 70;  // Bottom boundary (x-axis)
       const minX = 160;  // Left boundary
       const maxX = width - 90;  // Right boundary
 
       // If the entire line is outside boundaries, return null
       if ((y1 < minY && y2 < minY) || 
-          (y1 > maxY && y2 > maxY) ||
-          (x1 < minX && x2 < minX) ||
-          (x1 > maxX && x2 > maxX)) {
+          (y1 > maxY && y2 > maxY)) {
         return null;
       }
 
@@ -320,7 +355,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
         clippedY2 = minY;
       }
 
-      // Clip at bottom boundary
+      // Clip at bottom boundary (x-axis)
       if (y1 > maxY) {
         clippedX1 = x1 + (maxY - y1) / slope;
         clippedY1 = maxY;
@@ -330,24 +365,29 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
         clippedY2 = maxY;
       }
 
-      // Clip at left boundary
-      if (x1 < minX) {
-        clippedY1 = y1 + slope * (minX - x1);
-        clippedX1 = minX;
-      }
-      if (x2 < minX) {
-        clippedY2 = y2 + slope * (minX - x2);
-        clippedX2 = minX;
-      }
+      // For S3 line, extend the other end when one end is clipped
+      if (showS3) {
+        if (x1 < minX) {
+          // If left end is clipped, extend right end
+          const extension = (minX - x1) * 1.5; // Extend by 1.5x the clipped amount
+          clippedX2 = x2 + extension;
+          clippedY2 = y2 + slope * extension;
+        } else if (x2 > maxX) {
+          // If right end is clipped, extend left end
+          const extension = (x2 - maxX) * 1.5; // Extend by 1.5x the clipped amount
+          clippedX1 = x1 - extension;
+          clippedY1 = y1 - slope * extension;
+        }
 
-      // Clip at right boundary
-      if (x1 > maxX) {
-        clippedY1 = y1 + slope * (maxX - x1);
-        clippedX1 = maxX;
-      }
-      if (x2 > maxX) {
-        clippedY2 = y2 + slope * (maxX - x2);
-        clippedX2 = maxX;
+        // Ensure S3 line never goes below x-axis
+        if (clippedY1 > maxY) {
+          clippedY1 = maxY;
+          clippedX1 = x1 + (maxY - y1) / slope;
+        }
+        if (clippedY2 > maxY) {
+          clippedY2 = maxY;
+          clippedX2 = x2 + (maxY - y2) / slope;
+        }
       }
 
       return [clippedX1, clippedY1, clippedX2, clippedY2];
@@ -366,9 +406,9 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
       supplyPoints[3] - s2Distance
     ];
     const shiftedDownSupplyPoints = [
-      supplyPoints[0],
+      supplyPoints[0] + s3Distance * 0.5, // Shift right by half the distance
       supplyPoints[1] + s3Distance,
-      supplyPoints[2],
+      supplyPoints[2] + s3Distance * 0.5, // Shift right by half the distance
       supplyPoints[3] + s3Distance
     ];
 
@@ -423,7 +463,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
 
         {/* X and Y axes */}
         <Line
-          points={[160, height - 70, width - 90, height - 70]}
+          points={[160, height - 70, 160 + (height - 125), height - 70]}
           stroke="#000000"
           strokeWidth={settings.lineThickness * 0.75}
         />
@@ -505,7 +545,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
               points={[
                 160,
                 equilibrium.y + priceCeilingHeight,
-                width - 90,
+                160 + (height - 125) * 0.9,
                 equilibrium.y + priceCeilingHeight
               ]}
               stroke="#000000"
@@ -513,18 +553,12 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
             />
             <Text
               text="Pc"
-              x={125}
+              x={160 + (height - 125) * 0.9 + 10}
               y={equilibrium.y + priceCeilingHeight - 8}
               fontSize={settings.fontSize}
               fill="#000000"
             />
-            <Text
-              text="Pc"
-              x={width - 80}
-              y={equilibrium.y + priceCeilingHeight - 8}
-              fontSize={settings.fontSize}
-              fill="#000000"
-            />
+
             {/* Calculate intersections with S and D */}
             {(() => {
               const ceilingY = equilibrium.y + priceCeilingHeight;
@@ -583,7 +617,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
               points={[
                 160,
                 equilibrium.y + priceFloorHeight,
-                width - 90,
+                160 + (height - 125) * 0.9,
                 equilibrium.y + priceFloorHeight
               ]}
               stroke="#000000"
@@ -591,18 +625,12 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
             />
             <Text
               text="Pf"
-              x={125}
+              x={160 + (height - 125) * 0.9 + 10}
               y={equilibrium.y + priceFloorHeight - 8}
               fontSize={settings.fontSize}
               fill="#000000"
             />
-            <Text
-              text="Pf"
-              x={width - 80}
-              y={equilibrium.y + priceFloorHeight - 8}
-              fontSize={settings.fontSize}
-              fill="#000000"
-            />
+
             {/* Calculate intersections with S and D */}
             {(() => {
               const floorY = equilibrium.y + priceFloorHeight;
@@ -871,22 +899,22 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
         {/* Labels */}
         <Text
           text={settings.yAxisLabel}
-          x={20}
+          x={60}
           y={65}
           fontSize={settings.fontSize}
           fill="#000000"
-          width={120}
+          width={110}
           align="center"
           wrap="word"
           wordBreak="keep-all"
         />
         <Text
           text={settings.xAxisLabel}
-          x={width - 200}
+          x={width - 100}
           y={height - 55}
           fontSize={settings.fontSize}
           fill="#000000"
-          width={180}
+          width={100}
           align="center"
           wrap="word"
           wordBreak="keep-all"
@@ -941,209 +969,467 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
   }
 
   return (
-    <div style={{ 
-      width: width + 200, 
-      minHeight: height + 300,
-      paddingLeft: '100px',
-      paddingBottom: '40px'
-    }}>
-      <Stage ref={stageRef} width={width + 200} height={height}>
-        {renderSupplyDemand()}
-      </Stage>
+    <div className="flex gap-6">
+      {/* Left side - Canvas */}
       <div style={{ 
-        marginTop: '20px', 
-        display: 'flex', 
-        flexDirection: 'column', 
-        gap: '10px',
-        maxWidth: width - 100
+        width: width + 200, 
+        minHeight: height + 300,
+        paddingBottom: '40px'
       }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <Stage ref={stageRef} width={width + 200} height={height}>
+          {renderSupplyDemand()}
+        </Stage>
+        {mounted && (
           <div style={{ 
-            fontSize: '16px', 
-            fontWeight: 'bold',
-            color: '#333',
-            marginBottom: '4px'
+            marginTop: '20px', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '10px',
+            maxWidth: width + 200
           }}>
-            Interventions
-          </div>
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <button
-              onClick={() => setShowS2(!showS2)}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: showS2 ? '#4895ef' : '#f5f5f5',
-                color: showS2 ? 'white' : '#1f2937',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                transition: 'all 0.2s',
-                fontWeight: 500
-              }}
-            >
-              Tax
-            </button>
-
-            <button
-              onClick={() => setShowS3(!showS3)}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: showS3 ? '#4895ef' : '#f5f5f5',
-                color: showS3 ? 'white' : '#1f2937',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                transition: 'all 0.2s',
-                fontWeight: 500
-              }}
-            >
-              Subsidy
-            </button>
-
-            <button
-              onClick={() => setShowPriceCeiling(!showPriceCeiling)}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: showPriceCeiling ? '#4CAF50' : '#f0f0f0',
-                color: showPriceCeiling ? 'white' : 'black',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              Price Ceiling
-            </button>
-            <button
-              onClick={() => setShowPriceFloor(!showPriceFloor)}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: showPriceFloor ? '#4CAF50' : '#f0f0f0',
-                color: showPriceFloor ? 'white' : 'black',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              Price Floor
-            </button>
-          </div>
-        </div>
-        {showPriceCeiling && (
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', marginLeft: '20px' }}>
-            <input
-              type="range"
-              min="0"
-              max="150"
-              value={priceCeilingHeight}
-              onChange={(e) => setPriceCeilingHeight(parseInt(e.target.value))}
-              style={{ width: '150px' }}
-            />
-          </div>
-        )}
-        {showPriceFloor && (
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', marginLeft: '20px' }}>
-            <input
-              type="range"
-              min="-150"
-              max="0"
-              value={priceFloorHeight}
-              onChange={(e) => setPriceFloorHeight(parseInt(e.target.value))}
-              style={{ width: '150px' }}
-            />
-          </div>
-        )}
-        {showS2 && (
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', marginLeft: '20px' }}>
-            <button
-              onClick={() => setShowP2(!showP2)}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: showP2 ? '#4CAF50' : '#f0f0f0',
-                color: showP2 ? 'white' : 'black',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              Show Tax Distance
-            </button>
-            <input
-              type="range"
-              min="0"
-              max="150"
-              value={s2Distance}
-              onChange={(e) => setS2Distance(parseInt(e.target.value))}
-              style={{ width: '150px' }}
-            />
-            {showP2 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ 
+                fontSize: '16px', 
+                fontWeight: 'bold',
+                color: '#333',
+                marginBottom: '4px'
+              }}>
+                Interventions
+              </div>
               <div style={{ 
                 display: 'flex', 
-                flexDirection: 'column',
-                gap: '8px',
-                padding: '4px 12px',
-                backgroundColor: '#f5f5f5',
-                borderRadius: '4px'
+                gap: '10px', 
+                alignItems: 'center',
+                flexWrap: 'nowrap',
+                width: '100%',
+                justifyContent: 'flex-start'
               }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <button
+                  onClick={onToggleS2}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: showS2 ? '#4895ef' : '#f5f5f5',
+                    color: showS2 ? 'white' : '#1f2937',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    transition: 'all 0.2s',
+                    fontWeight: 500,
+                    flex: '0 0 auto'
+                  }}
+                >
+                  Tax
+                </button>
+                <button
+                  onClick={onToggleS3}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: showS3 ? '#4895ef' : '#f5f5f5',
+                    color: showS3 ? 'white' : '#1f2937',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    transition: 'all 0.2s',
+                    fontWeight: 500,
+                    flex: '0 0 auto'
+                  }}
+                >
+                  Subsidy
+                </button>
+                <button
+                  onClick={onTogglePriceCeiling}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: showPriceCeiling ? '#32a567' : '#f5f5f5',
+                    color: showPriceCeiling ? 'white' : '#1f2937',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    transition: 'all 0.2s',
+                    fontWeight: 500,
+                    flex: '0 0 auto'
+                  }}
+                >
+                  Price Ceiling
+                </button>
+                <button
+                  onClick={onTogglePriceFloor}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: showPriceFloor ? '#32a567' : '#f5f5f5',
+                    color: showPriceFloor ? 'white' : '#1f2937',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    transition: 'all 0.2s',
+                    fontWeight: 500,
+                    flex: '0 0 auto'
+                  }}
+                >
+                  Price Floor
+                </button>
+              </div>
+            </div>
+            {showPriceCeiling && (
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', marginLeft: '20px' }}>
+                <input
+                  type="range"
+                  min="0"
+                  max="150"
+                  value={priceCeilingHeight}
+                  onChange={(e) => setPriceCeilingHeight(parseInt(e.target.value))}
+                  style={{ width: '150px' }}
+                />
+              </div>
+            )}
+            {showPriceFloor && (
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', marginLeft: '20px' }}>
+                <input
+                  type="range"
+                  min="-150"
+                  max="0"
+                  value={priceFloorHeight}
+                  onChange={(e) => setPriceFloorHeight(parseInt(e.target.value))}
+                  style={{ width: '150px' }}
+                />
+              </div>
+            )}
+            {showS2 && (
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', marginLeft: '20px' }}>
+                <button
+                  onClick={() => setShowP2(!showP2)}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: showP2 ? '#4CAF50' : '#f0f0f0',
+                    color: showP2 ? 'white' : 'black',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Show Tax Distance
+                </button>
+                <input
+                  type="range"
+                  min="0"
+                  max="150"
+                  value={s2Distance}
+                  onChange={(e) => setS2Distance(parseInt(e.target.value))}
+                  style={{ width: '150px' }}
+                />
+                {showP2 && (
                   <div style={{ 
                     display: 'flex', 
                     flexDirection: 'column',
                     gap: '8px',
-                    padding: '8px',
-                    backgroundColor: '#ffffff',
+                    padding: '4px 12px',
+                    backgroundColor: '#f5f5f5',
                     borderRadius: '4px'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <input
-                        type="checkbox"
-                        checked={showShading}
-                        onChange={(e) => setShowShading(e.target.checked)}
-                        id="showTaxRevenue"
-                        style={{
-                          width: '16px',
-                          height: '16px',
-                          cursor: 'pointer',
-                          accentColor: '#4895ef'
-                        }}
-                      />
-                      <label
-                        htmlFor="showTaxRevenue"
-                        style={{
-                          cursor: 'pointer',
-                          userSelect: 'none',
-                          fontSize: '14px',
-                          color: '#1f2937'
-                        }}
-                      >
-                        Show Tax/Government Revenue
-                      </label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        gap: '8px',
+                        padding: '8px',
+                        backgroundColor: '#ffffff',
+                        borderRadius: '4px'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <input
+                            type="checkbox"
+                            checked={showShading}
+                            onChange={(e) => setShowShading(e.target.checked)}
+                            id="showTaxRevenue"
+                            style={{
+                              width: '16px',
+                              height: '16px',
+                              cursor: 'pointer',
+                              accentColor: '#4895ef'
+                            }}
+                          />
+                          <label
+                            htmlFor="showTaxRevenue"
+                            style={{
+                              cursor: 'pointer',
+                              userSelect: 'none',
+                              fontSize: '14px',
+                              color: '#1f2937'
+                            }}
+                          >
+                            Show Tax/Government Revenue
+                          </label>
+                        </div>
+                        {showShading && (
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px',
+                            backgroundColor: '#ffffff',
+                            borderRadius: '4px',
+                            marginLeft: '24px'
+                          }}>
+                            <div style={{
+                              display: 'flex',
+                              gap: '4px',
+                              flexWrap: 'wrap',
+                              maxWidth: '225px'
+                            }}>
+                              {pastelColors.map((color) => (
+                                <button
+                                  key={color.color}
+                                  onClick={() => setShadingColor(color.color)}
+                                  style={{
+                                    width: '24px',
+                                    height: '24px',
+                                    backgroundColor: color.color,
+                                    border: color.color === shadingColor ? '2px solid #000' : '1px solid #ccc',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    padding: '0'
+                                  }}
+                                  title={color.name}
+                                />
+                              ))}
+                            </div>
+                            <div style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '4px'
+                            }}>
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                fontSize: '12px'
+                              }}>
+                                <label style={{ color: '#1f2937' }}>Fill:</label>
+                                <input
+                                  type="range"
+                                  min="0"
+                                  max="100"
+                                  value={fillOpacity * 100}
+                                  onChange={(e) => setFillOpacity(parseInt(e.target.value) / 100)}
+                                  style={{ width: '80px', accentColor: '#4895ef' }}
+                                />
+                              </div>
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                fontSize: '12px'
+                              }}>
+                                <label style={{ color: '#1f2937' }}>Border:</label>
+                                <input
+                                  type="range"
+                                  min="0"
+                                  max="100"
+                                  value={strokeOpacity * 100}
+                                  onChange={(e) => setStrokeOpacity(parseInt(e.target.value) / 100)}
+                                  style={{ width: '80px', accentColor: '#4895ef' }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        gap: '8px',
+                        padding: '8px',
+                        backgroundColor: '#ffffff',
+                        borderRadius: '4px'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <input
+                            type="checkbox"
+                            checked={showWelfareLoss}
+                            onChange={(e) => setShowWelfareLoss(e.target.checked)}
+                            id="showWelfareLoss"
+                            style={{
+                              width: '16px',
+                              height: '16px',
+                              cursor: 'pointer',
+                              accentColor: '#4895ef'
+                            }}
+                          />
+                          <label
+                            htmlFor="showWelfareLoss"
+                            style={{
+                              cursor: 'pointer',
+                              userSelect: 'none',
+                              fontSize: '14px',
+                              color: '#1f2937'
+                            }}
+                          >
+                            Show Welfare Loss
+                          </label>
+                        </div>
+                        {showWelfareLoss && (
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px',
+                            backgroundColor: '#ffffff',
+                            borderRadius: '4px',
+                            marginLeft: '24px'
+                          }}>
+                            <div style={{
+                              display: 'flex',
+                              gap: '4px',
+                              flexWrap: 'wrap',
+                              maxWidth: '225px'
+                            }}>
+                              {pastelColors.map((color) => (
+                                <button
+                                  key={color.color}
+                                  onClick={() => setWelfareLossColor(color.color)}
+                                  style={{
+                                    width: '24px',
+                                    height: '24px',
+                                    backgroundColor: color.color,
+                                    border: color.color === welfareLossColor ? '2px solid #000' : '1px solid #ccc',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    padding: '0'
+                                  }}
+                                  title={color.name}
+                                />
+                              ))}
+                            </div>
+                            <div style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '4px'
+                            }}>
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                fontSize: '12px'
+                              }}>
+                                <label style={{ color: '#1f2937' }}>Fill:</label>
+                                <input
+                                  type="range"
+                                  min="0"
+                                  max="100"
+                                  value={welfareLossFillOpacity * 100}
+                                  onChange={(e) => setWelfareLossFillOpacity(parseInt(e.target.value) / 100)}
+                                  style={{ width: '80px', accentColor: '#4895ef' }}
+                                />
+                              </div>
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                fontSize: '12px'
+                              }}>
+                                <label style={{ color: '#1f2937' }}>Border:</label>
+                                <input
+                                  type="range"
+                                  min="0"
+                                  max="100"
+                                  value={welfareLossStrokeOpacity * 100}
+                                  onChange={(e) => setWelfareLossStrokeOpacity(parseInt(e.target.value) / 100)}
+                                  style={{ width: '80px', accentColor: '#4895ef' }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    {showShading && (
+                  </div>
+                )}
+              </div>
+            )}
+            {showS3 && (
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', marginLeft: '20px' }}>
+                <button
+                  onClick={() => setShowP3(!showP3)}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: showP3 ? '#4CAF50' : '#f0f0f0',
+                    color: showP3 ? 'white' : 'black',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Show Subsidy Distance
+                </button>
+                <input
+                  type="range"
+                  min="0"
+                  max="150"
+                  value={s3Distance}
+                  onChange={(e) => setS3Distance(parseInt(e.target.value))}
+                  style={{ width: '150px' }}
+                />
+                {showP3 && (
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '8px',
+                    padding: '4px 12px',
+                    backgroundColor: '#f5f5f5',
+                    borderRadius: '4px'
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={showSubsidyShading}
+                      onChange={(e) => setShowSubsidyShading(e.target.checked)}
+                      id="showSubsidyCost"
+                      style={{
+                        width: '16px',
+                        height: '16px',
+                        cursor: 'pointer',
+                        accentColor: '#4895ef'
+                      }}
+                    />
+                    <label
+                      htmlFor="showSubsidyCost"
+                      style={{
+                        cursor: 'pointer',
+                        userSelect: 'none',
+                        fontSize: '14px',
+                        color: '#1f2937'
+                      }}
+                    >
+                      Show Subsidy Cost
+                    </label>
+                    {showSubsidyShading && (
                       <div style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
-                        padding: '8px',
+                        marginLeft: '8px',
+                        padding: '4px',
                         backgroundColor: '#ffffff',
-                        borderRadius: '4px',
-                        marginLeft: '24px'
+                        borderRadius: '4px'
                       }}>
                         <div style={{
                           display: 'flex',
                           gap: '4px',
                           flexWrap: 'wrap',
-                          maxWidth: '225px'
+                          maxWidth: '200px'
                         }}>
                           {pastelColors.map((color) => (
                             <button
                               key={color.color}
-                              onClick={() => setShadingColor(color.color)}
+                              onClick={() => setSubsidyShadingColor(color.color)}
                               style={{
                                 width: '24px',
                                 height: '24px',
                                 backgroundColor: color.color,
-                                border: color.color === shadingColor ? '2px solid #000' : '1px solid #ccc',
+                                border: color.color === subsidyShadingColor ? '2px solid #000' : '1px solid #ccc',
                                 borderRadius: '4px',
                                 cursor: 'pointer',
                                 padding: '0'
@@ -1168,8 +1454,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
                               type="range"
                               min="0"
                               max="100"
-                              value={fillOpacity * 100}
-                              onChange={(e) => setFillOpacity(parseInt(e.target.value) / 100)}
+                              value={subsidyFillOpacity * 100}
+                              onChange={(e) => setSubsidyFillOpacity(parseInt(e.target.value) / 100)}
                               style={{ width: '80px', accentColor: '#4895ef' }}
                             />
                           </div>
@@ -1184,8 +1470,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
                               type="range"
                               min="0"
                               max="100"
-                              value={strokeOpacity * 100}
-                              onChange={(e) => setStrokeOpacity(parseInt(e.target.value) / 100)}
+                              value={subsidyStrokeOpacity * 100}
+                              onChange={(e) => setSubsidyStrokeOpacity(parseInt(e.target.value) / 100)}
                               style={{ width: '80px', accentColor: '#4895ef' }}
                             />
                           </div>
@@ -1193,198 +1479,47 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
                       </div>
                     )}
                   </div>
-                  <div style={{ 
-                    display: 'flex', 
-                    flexDirection: 'column',
-                    gap: '8px',
-                    padding: '8px',
-                    backgroundColor: '#ffffff',
-                    borderRadius: '4px'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <input
-                        type="checkbox"
-                        checked={showWelfareLoss}
-                        onChange={(e) => setShowWelfareLoss(e.target.checked)}
-                        id="showWelfareLoss"
-                        style={{
-                          width: '16px',
-                          height: '16px',
-                          cursor: 'pointer',
-                          accentColor: '#4895ef'
-                        }}
-                      />
-                      <label
-                        htmlFor="showWelfareLoss"
-                        style={{
-                          cursor: 'pointer',
-                          userSelect: 'none',
-                          fontSize: '14px',
-                          color: '#1f2937'
-                        }}
-                      >
-                        Show Welfare Loss
-                      </label>
-                    </div>
-                    {showWelfareLoss && (
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '8px',
-                        backgroundColor: '#ffffff',
-                        borderRadius: '4px',
-                        marginLeft: '24px'
-                      }}>
-                        <div style={{
-                          display: 'flex',
-                          gap: '4px',
-                          flexWrap: 'wrap',
-                          maxWidth: '225px'
-                        }}>
-                          {pastelColors.map((color) => (
-                            <button
-                              key={color.color}
-                              onClick={() => setWelfareLossColor(color.color)}
-                              style={{
-                                width: '24px',
-                                height: '24px',
-                                backgroundColor: color.color,
-                                border: color.color === welfareLossColor ? '2px solid #000' : '1px solid #ccc',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                padding: '0'
-                              }}
-                              title={color.name}
-                            />
-                          ))}
-                        </div>
-                        <div style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '4px'
-                        }}>
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            fontSize: '12px'
-                          }}>
-                            <label style={{ color: '#1f2937' }}>Fill:</label>
-                            <input
-                              type="range"
-                              min="0"
-                              max="100"
-                              value={welfareLossFillOpacity * 100}
-                              onChange={(e) => setWelfareLossFillOpacity(parseInt(e.target.value) / 100)}
-                              style={{ width: '80px', accentColor: '#4895ef' }}
-                            />
-                          </div>
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            fontSize: '12px'
-                          }}>
-                            <label style={{ color: '#1f2937' }}>Border:</label>
-                            <input
-                              type="range"
-                              min="0"
-                              max="100"
-                              value={welfareLossStrokeOpacity * 100}
-                              onChange={(e) => setWelfareLossStrokeOpacity(parseInt(e.target.value) / 100)}
-                              style={{ width: '80px', accentColor: '#4895ef' }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                )}
               </div>
             )}
           </div>
         )}
-        {showS3 && (
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', marginLeft: '20px' }}>
-            <button
-              onClick={() => setShowP3(!showP3)}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: showP3 ? '#4CAF50' : '#f0f0f0',
-                color: showP3 ? 'white' : 'black',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              Show Subsidy Distance
-            </button>
-            <input
-              type="range"
-              min="0"
-              max="150"
-              value={s3Distance}
-              onChange={(e) => setS3Distance(parseInt(e.target.value))}
-              style={{ width: '150px' }}
-            />
-            {showP3 && (
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '8px',
-                padding: '4px 12px',
-                backgroundColor: '#f5f5f5',
-                borderRadius: '4px'
-              }}>
+      </div>
+
+      {/* Right side - UI Controls */}
+      {mounted && (
+        <div className="w-[600px] p-4 bg-white rounded-lg shadow-sm">
+          <div className="grid grid-cols-2 gap-6">
+            {/* Left Column */}
+            <div className="space-y-6">
+              {/* Title Input */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-black">Title</label>
                 <input
-                  type="checkbox"
-                  checked={showSubsidyShading}
-                  onChange={(e) => setShowSubsidyShading(e.target.checked)}
-                  id="showSubsidyCost"
-                  style={{
-                    width: '16px',
-                    height: '16px',
-                    cursor: 'pointer',
-                    accentColor: '#4895ef'
-                  }}
+                  type="text"
+                  value={settings.title}
+                  onChange={(e) => onUpdateSettings({ ...settings, title: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                  placeholder="Enter title"
                 />
-                <label
-                  htmlFor="showSubsidyCost"
-                  style={{
-                    cursor: 'pointer',
-                    userSelect: 'none',
-                    fontSize: '14px',
-                    color: '#1f2937'
-                  }}
-                >
-                  Show Subsidy Cost
-                </label>
-                {showSubsidyShading && (
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    marginLeft: '8px',
-                    padding: '4px',
-                    backgroundColor: '#ffffff',
-                    borderRadius: '4px'
-                  }}>
-                    <div style={{
-                      display: 'flex',
-                      gap: '4px',
-                      flexWrap: 'wrap',
-                      maxWidth: '200px'
-                    }}>
+              </div>
+
+              {/* Line Colors */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-black">Line Colors</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm text-black mb-1">Supply Line Color</label>
+                    <div className="flex gap-2 flex-wrap">
                       {pastelColors.map((color) => (
                         <button
                           key={color.color}
-                          onClick={() => setSubsidyShadingColor(color.color)}
+                          onClick={() => onUpdateSettings({ ...settings, primaryColor: color.color })}
                           style={{
                             width: '24px',
                             height: '24px',
                             backgroundColor: color.color,
-                            border: color.color === subsidyShadingColor ? '2px solid #000' : '1px solid #ccc',
+                            border: color.color === settings.primaryColor ? '2px solid #000' : '1px solid #ccc',
                             borderRadius: '4px',
                             cursor: 'pointer',
                             padding: '0'
@@ -1393,51 +1528,123 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({ settin
                         />
                       ))}
                     </div>
-                    <div style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '4px'
-                    }}>
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        fontSize: '12px'
-                      }}>
-                        <label style={{ color: '#1f2937' }}>Fill:</label>
-                        <input
-                          type="range"
-                          min="0"
-                          max="100"
-                          value={subsidyFillOpacity * 100}
-                          onChange={(e) => setSubsidyFillOpacity(parseInt(e.target.value) / 100)}
-                          style={{ width: '80px', accentColor: '#4895ef' }}
+                  </div>
+                  <div>
+                    <label className="block text-sm text-black mb-1">Demand Line Color</label>
+                    <div className="flex gap-2 flex-wrap">
+                      {pastelColors.map((color) => (
+                        <button
+                          key={color.color}
+                          onClick={() => onUpdateSettings({ ...settings, secondaryColor: color.color })}
+                          style={{
+                            width: '24px',
+                            height: '24px',
+                            backgroundColor: color.color,
+                            border: color.color === settings.secondaryColor ? '2px solid #000' : '1px solid #ccc',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            padding: '0'
+                          }}
+                          title={color.name}
                         />
-                      </div>
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        fontSize: '12px'
-                      }}>
-                        <label style={{ color: '#1f2937' }}>Border:</label>
-                        <input
-                          type="range"
-                          min="0"
-                          max="100"
-                          value={subsidyStrokeOpacity * 100}
-                          onChange={(e) => setSubsidyStrokeOpacity(parseInt(e.target.value) / 100)}
-                          style={{ width: '80px', accentColor: '#4895ef' }}
-                        />
-                      </div>
+                      ))}
                     </div>
                   </div>
-                )}
+                </div>
               </div>
-            )}
+
+              {/* Axis Labels */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-black">Axis Labels</h4>
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    value={settings.xAxisLabel}
+                    onChange={(e) => onUpdateSettings({ ...settings, xAxisLabel: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                    placeholder="X-axis label"
+                  />
+                  <input
+                    type="text"
+                    value={settings.yAxisLabel}
+                    onChange={(e) => onUpdateSettings({ ...settings, yAxisLabel: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                    placeholder="Y-axis label"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-6">
+              {/* Style Controls */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-black">Style</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm text-black mb-1">Font Size</label>
+                    <input
+                      type="range"
+                      min="12"
+                      max="24"
+                      value={settings.fontSize}
+                      onChange={(e) => onUpdateSettings({ ...settings, fontSize: parseInt(e.target.value) })}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-black mb-1">Line Thickness</label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="5"
+                      step="0.5"
+                      value={settings.lineThickness}
+                      onChange={(e) => onUpdateSettings({ ...settings, lineThickness: parseFloat(e.target.value) })}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Elasticity Controls */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-black">Elasticity</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm text-black mb-1">Supply Elasticity</label>
+                    <select
+                      value={settings.supplyElasticity}
+                      onChange={(e) => onUpdateSettings({ ...settings, supplyElasticity: e.target.value as any })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                    >
+                      <option value="unitary">Unitary</option>
+                      <option value="relatively-elastic">Relatively Elastic</option>
+                      <option value="relatively-inelastic">Relatively Inelastic</option>
+                      <option value="perfectly-elastic">Perfectly Elastic</option>
+                      <option value="perfectly-inelastic">Perfectly Inelastic</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-black mb-1">Demand Elasticity</label>
+                    <select
+                      value={settings.demandElasticity}
+                      onChange={(e) => onUpdateSettings({ ...settings, demandElasticity: e.target.value as any })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                    >
+                      <option value="unitary">Unitary</option>
+                      <option value="relatively-elastic">Relatively Elastic</option>
+                      <option value="relatively-inelastic">Relatively Inelastic</option>
+                      <option value="perfectly-elastic">Perfectly Elastic</option>
+                      <option value="perfectly-inelastic">Perfectly Inelastic</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 });

@@ -15,6 +15,32 @@ export default function DiagramControls({ onUpdate, settings }: DiagramControlsP
   return (
     <div className="space-y-6 p-6 bg-white rounded-lg shadow">
       <div className="space-y-4">
+        <h4 className="text-sm font-medium text-gray-900">Add an Intervention</h4>
+        <div className="flex flex-wrap gap-2">
+          <button
+            className="px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200 min-w-[100px] bg-gray-100 text-gray-700 hover:bg-gray-200"
+          >
+            Tax
+          </button>
+          <button
+            className="px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200 min-w-[100px] bg-gray-100 text-gray-700 hover:bg-gray-200"
+          >
+            Subsidy
+          </button>
+          <button
+            className="px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200 min-w-[100px] bg-gray-100 text-gray-700 hover:bg-gray-200"
+          >
+            Price Ceiling
+          </button>
+          <button
+            className="px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200 min-w-[100px] bg-gray-100 text-gray-700 hover:bg-gray-200"
+          >
+            Price Floor
+          </button>
+        </div>
+      </div>
+
+      <div className="space-y-4">
         <h4 className="text-sm font-medium text-gray-900">Title</h4>
         <div>
           <label className="block text-sm font-medium text-gray-900 mb-1">
