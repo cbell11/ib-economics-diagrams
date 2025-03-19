@@ -11,7 +11,7 @@ type ElasticityType = 'unitary' | 'relatively-elastic' | 'relatively-inelastic' 
 
 interface DiagramCanvasProps {
   settings: DiagramSettings;
-  type: 'supply-demand' | 'ppf' | 'cost-curves';
+  type: 'supply-demand' | 'neo-classical-ad-as' | 'externalities' | 'international-trade';
   showS2: boolean;
   showS3: boolean;
   showPriceCeiling: boolean;
