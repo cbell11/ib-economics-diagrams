@@ -60,16 +60,18 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   const [s2Distance, setS2Distance] = useState(40);
   const [s3Distance, setS3Distance] = useState(40);
 
-  const pastelColors = [
-    { color: '#666666', name: 'Gray' },
-    { color: '#90EE90', name: 'Light Green' },
-    { color: '#FFB6C1', name: 'Light Pink' },
-    { color: '#87CEEB', name: 'Sky Blue' },
-    { color: '#DDA0DD', name: 'Plum' },
-    { color: '#F0E68C', name: 'Khaki' },
-    { color: '#98FB98', name: 'Pale Green' },
-    { color: '#B0C4DE', name: 'Light Steel Blue' },
-    { color: '#FFA07A', name: 'Light Salmon' }
+  interface ColorOption {
+    color: string;
+    name: string;
+  }
+
+  const standardColors: ColorOption[] = [
+    { color: '#0066cc', name: 'Standard Blue' },
+    { color: '#cc0000', name: 'Standard Red' },
+    { color: '#006600', name: 'Standard Green' },
+    { color: '#660066', name: 'Standard Purple' },
+    { color: '#cc6600', name: 'Standard Orange' },
+    { color: '#000000', name: 'Black' },
   ];
 
   const stageRef = useRef<Konva.Stage>(null);
@@ -1180,7 +1182,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                               flexWrap: 'wrap',
                               maxWidth: '225px'
                             }}>
-                              {pastelColors.map((color) => (
+                              {standardColors.map((color) => (
                                 <button
                                   key={color.color}
                                   onClick={() => setShadingColor(color.color)}
@@ -1287,7 +1289,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                               flexWrap: 'wrap',
                               maxWidth: '225px'
                             }}>
-                              {pastelColors.map((color) => (
+                              {standardColors.map((color) => (
                                 <button
                                   key={color.color}
                                   onClick={() => setWelfareLossColor(color.color)}
@@ -1421,7 +1423,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                           flexWrap: 'wrap',
                           maxWidth: '200px'
                         }}>
-                          {pastelColors.map((color) => (
+                          {standardColors.map((color) => (
                             <button
                               key={color.color}
                               onClick={() => setSubsidyShadingColor(color.color)}
@@ -1511,7 +1513,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                   <div>
                     <label className="block text-sm text-black mb-1">Supply Line Color</label>
                     <div className="flex gap-2 flex-wrap">
-                      {pastelColors.map((color) => (
+                      {standardColors.map((color) => (
                         <button
                           key={color.color}
                           onClick={() => onUpdateSettings({ ...settings, primaryColor: color.color })}
@@ -1532,7 +1534,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                   <div>
                     <label className="block text-sm text-black mb-1">Demand Line Color</label>
                     <div className="flex gap-2 flex-wrap">
-                      {pastelColors.map((color) => (
+                      {standardColors.map((color) => (
                         <button
                           key={color.color}
                           onClick={() => onUpdateSettings({ ...settings, secondaryColor: color.color })}

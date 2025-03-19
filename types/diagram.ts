@@ -18,12 +18,13 @@ export interface DiagramSettings {
   secondaryColor: string;
   supplyElasticity: 'unitary' | 'relatively-elastic' | 'relatively-inelastic' | 'perfectly-elastic' | 'perfectly-inelastic';
   demandElasticity: 'unitary' | 'relatively-elastic' | 'relatively-inelastic' | 'perfectly-elastic' | 'perfectly-inelastic';
+  size: number;
 }
 
 export const defaultSettings: DiagramSettings = {
   title: '',
-  xAxisLabel: '',
-  yAxisLabel: '',
+  xAxisLabel: 'Quantity',
+  yAxisLabel: 'Price',
   s1Label: '',
   s2Label: '',
   s3Label: '',
@@ -32,10 +33,11 @@ export const defaultSettings: DiagramSettings = {
   priceFloorHeight: 0,
   s2Distance: 0,
   s3Distance: 0,
-  fontSize: 14,
+  fontSize: 16,
   lineThickness: 2,
-  primaryColor: '#4895ef',
-  secondaryColor: '#32a567',
+  primaryColor: '#0066cc',
+  secondaryColor: '#cc0000',
   supplyElasticity: 'unitary',
-  demandElasticity: 'unitary'
+  demandElasticity: 'unitary',
+  size: 1
 }; 
