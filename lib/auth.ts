@@ -14,10 +14,17 @@ export interface DecodedToken {
   exp: number;
 }
 
+interface JWTPayload {
+  user_id: string;
+  email: string;
+  membership: string[];
+  exp: number;
+}
+
 export function verifyToken(token: string): DecodedToken | null {
   try {
     // Decode the token
-    const decoded = jwt.verify(token, JWT_SECRET as jwt.Secret) as any;
+    const decoded = jwt.verify(token, JWT_SECRET as jwt.Secret) as JWTPayload;
 
     // Check expiration
     if (decoded.exp < Date.now() / 1000) {
