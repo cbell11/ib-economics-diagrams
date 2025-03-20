@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { DiagramType } from '../types/diagram';
+import { DiagramType, DiagramTypes } from '../types/diagram';
 
 interface DiagramSelectorProps {
   onSelect: (type: DiagramType, title: string) => void;
@@ -15,25 +15,25 @@ interface DiagramOption {
 
 const diagramOptions: DiagramOption[] = [
   {
-    type: 'supply-demand',
+    type: DiagramTypes.SUPPLY_DEMAND,
     title: 'Supply and Demand',
     description: 'Create supply and demand diagrams with various elasticities, interventions, and welfare analysis.',
     comingSoon: false
   },
   {
-    type: 'neo-classical-ad-as',
+    type: DiagramTypes.NEO_CLASSICAL_AD_AS,
     title: 'Neo-Classical AD-AS',
     description: 'Create aggregate demand and supply diagrams with a vertical long-run aggregate supply curve.',
     comingSoon: true
   },
   {
-    type: 'externalities',
+    type: DiagramTypes.EXTERNALITIES,
     title: 'Externalities',
     description: 'Illustrate positive and negative externalities with social and private cost/benefit curves.',
     comingSoon: true
   },
   {
-    type: 'international-trade',
+    type: DiagramTypes.INTERNATIONAL_TRADE,
     title: 'International Trade',
     description: 'Visualize comparative advantage, terms of trade, and gains from trade between countries.',
     comingSoon: true
