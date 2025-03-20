@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { JWTPayload, DecodedToken, verifyToken } from '../auth';
+import { DecodedToken, verifyToken } from '../auth';
 
 interface AuthState {
   token: string | null;
