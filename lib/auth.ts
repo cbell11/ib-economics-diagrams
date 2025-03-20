@@ -74,22 +74,26 @@ export function getTokenFromLocalStorage(): string | null {
 }
 
 export function hasValidUser(): boolean {
-  console.log("=== User Validation Debug ===");
-  console.log("Starting user validation check");
-  const token = getTokenFromLocalStorage();
+  console.log("=== Referrer Validation Debug ===");
   
-  if (!token) {
-    console.log("No token found in localStorage");
+  if (typeof window === 'undefined') {
+    console.log("Running on server side - no referrer available");
     return false;
   }
-  
-  const decoded = verifyToken(token);
-  const isValid = decoded !== null;
-  
-  console.log("User validation result:", {
+
+  // Get the referrer URL
+  const referrer = document.referrer;
+  console.log("Current referrer:", referrer);
+
+  // Check if referrer matches the allowed URL
+  const allowedReferrer = "https://diplomacollective.com/home/for-students/econgraph-pro/";
+  const isValid = referrer === allowedReferrer;
+
+  console.log("Referrer validation result:", {
     isValid,
-    userId: decoded?.userId
+    referrer,
+    allowedReferrer
   });
-  
+
   return isValid;
 } 

@@ -967,15 +967,35 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
     );
   };
 
-  const handleDownload = async (format: 'png' | 'jpg') => {
-    setShowFormatDialog(false);
+  function isValidReferrer(referrer: string): boolean {
+    // The main allowed referrer
+    const allowedReferrer = "https://diplomacollective.com/home/for-students/econgraph-pro/";
     
-    console.log("Starting download process...");
-    const hasUser = hasValidUser();
-    console.log("User validation result:", hasUser);
+    // Also allow if user navigates within the app after coming from allowed referrer
+    const isFromAllowedDomain = referrer.startsWith("https://diplomacollective.com/");
+    
+    // For development and testing
+    const isDevelopment = process.env.NODE_ENV === "development";
+    
+    return referrer === allowedReferrer || isFromAllowedDomain || isDevelopment;
+  }
 
-    if (!hasUser) {
-      console.log("No valid user found, showing payment dialog");
+  const handleDownload = async (format: 'png' | 'jpg') => {
+    console.log("Starting download process...");
+    
+    if (typeof window === 'undefined') {
+      console.log("Running on server side - cannot process download");
+      return;
+    }
+
+    const referrer = document.referrer;
+    console.log("Current referrer:", referrer);
+    
+    const isValid = isValidReferrer(referrer);
+    console.log("Referrer validation result:", { isValid, referrer });
+
+    if (!isValid) {
+      console.log("Invalid referrer, showing payment dialog");
       setShowPaymentDialog(true);
       return;
     }
@@ -983,52 +1003,30 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
     try {
       const stage = stageRef.current;
       if (!stage) {
-        console.error("Stage reference not found");
+        console.error("Stage not found");
         return;
       }
 
-      // Create a temporary canvas with white background
-      const tempCanvas = document.createElement('canvas');
-      const tempContext = tempCanvas.getContext('2d');
-      if (!tempContext) {
-        console.error("Could not get canvas context");
-        return;
-      }
-
-      // Set canvas dimensions
-      tempCanvas.width = stage.width();
-      tempCanvas.height = stage.height();
-
-      // Fill white background
-      tempContext.fillStyle = '#FFFFFF';
-      tempContext.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-
-      // Draw stage content using toCanvas method
-      console.log("Converting stage to canvas...");
-      const stageCanvas = await stage.toCanvas({
-        pixelRatio: 2,
-        mimeType: format === 'png' ? 'image/png' : 'image/jpeg'
-      });
-      tempContext.drawImage(stageCanvas, 0, 0);
-
-      // Convert to data URL
-      console.log("Creating download URL...");
-      const dataURL = tempCanvas.toDataURL(`image/${format}`);
-
-      // Create download link
+      // Create a temporary link element
       const link = document.createElement('a');
-      link.download = `diagram.${format}`;
-      link.href = dataURL;
+      link.download = `${settings.title || type}-diagram.${format}`;
+      
+      // Get the stage data URL
+      const dataUrl = stage.toDataURL({
+        pixelRatio: 2,
+        mimeType: format === 'jpg' ? 'image/jpeg' : 'image/png',
+        quality: 1
+      });
+      
+      link.href = dataUrl;
       document.body.appendChild(link);
-      console.log("Initiating download...");
       link.click();
       document.body.removeChild(link);
-      console.log("Download completed");
-
+      
+      console.log(`Download completed in ${format} format`);
     } catch (error) {
-      console.error('Error downloading diagram:', error);
-      // Show error message to user
-      alert('Failed to download diagram. Please try again.');
+      console.error("Download failed:", error);
+      setShowPaymentDialog(true);
     }
   };
 
