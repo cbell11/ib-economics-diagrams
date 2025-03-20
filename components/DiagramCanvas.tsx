@@ -6,7 +6,7 @@ import { Stage, Layer, Line, Text, Circle, Rect } from 'react-konva';
 import Konva from 'konva';
 import CanvasControls from './CanvasControls';
 import Image from 'next/image';
-import { hasValidMembership } from '../lib/auth';
+import { hasValidUser } from '../lib/auth';
 
 type ElasticityType = 'unitary' | 'relatively-elastic' | 'relatively-inelastic' | 'perfectly-elastic' | 'perfectly-inelastic';
 
@@ -971,11 +971,11 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
     setShowFormatDialog(false);
     
     console.log("Starting download process...");
-    const hasMembership = hasValidMembership();
-    console.log("Membership check result:", hasMembership);
+    const hasUser = hasValidUser();
+    console.log("User validation result:", hasUser);
 
-    if (!hasMembership) {
-      console.log("No valid membership found, showing payment dialog");
+    if (!hasUser) {
+      console.log("No valid user found, showing payment dialog");
       setShowPaymentDialog(true);
       return;
     }
