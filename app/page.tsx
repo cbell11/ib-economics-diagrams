@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import { useSearchParams } from 'next/navigation';
 import { DiagramType } from '../types/diagram';
 
 const EconomicDiagram = dynamic(() => import('../components/EconomicDiagram'), {
@@ -19,6 +20,20 @@ interface DiagramOption {
 
 export default function Home() {
   const [selectedDiagram, setSelectedDiagram] = useState<DiagramOption | null>(null);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (!searchParams) return;
+    
+    // Check for token in URL parameters
+    const token = searchParams.get('token');
+    if (token) {
+      // Store token in localStorage
+      localStorage.setItem('auth_token', token);
+      // Remove token from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [searchParams]);
 
   const handleDiagramSelect = (type: DiagramOption['type'], title: string) => {
     setSelectedDiagram({ type, title });
