@@ -1,11 +1,6 @@
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET;
 const VALID_MEMBERSHIPS = ["478", "479", "3451"]; // Allowed MemberPress IDs
-
-if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET environment variable is not set");
-}
 
 export interface JWTPayload {
   user_id: string;
@@ -23,6 +18,14 @@ export interface DecodedToken {
 
 export function verifyToken(token: string): DecodedToken | null {
   try {
+    const JWT_SECRET = process.env.JWT_SECRET;
+    
+    // Only check for JWT_SECRET when actually verifying a token
+    if (!JWT_SECRET) {
+      console.error("JWT_SECRET environment variable is not set");
+      return null;
+    }
+
     // Decode the token
     const decoded = jwt.verify(token, JWT_SECRET as jwt.Secret) as JWTPayload;
 
