@@ -1,70 +1,87 @@
 import { useState, useEffect } from 'react';
-import { JWTPayload, verifyToken } from '../auth';
+import { JWTPayload, DecodedToken, verifyToken } from '../auth';
 
 interface AuthState {
   token: string | null;
-  user: JWTPayload | null;
+  decodedToken: DecodedToken | null;
   isLoading: boolean;
+  error: string | null;
 }
 
 export function useAuth() {
   const [authState, setAuthState] = useState<AuthState>({
     token: null,
-    user: null,
-    isLoading: true
+    decodedToken: null,
+    isLoading: true,
+    error: null
   });
 
   useEffect(() => {
-    // Check localStorage first
-    const storedToken = localStorage.getItem('auth_token');
-    if (storedToken) {
-      const decoded = verifyToken(storedToken);
-      if (decoded) {
-        setAuthState({
-          token: storedToken,
-          user: decoded,
-          isLoading: false
-        });
-        return;
-      }
-      // Clear invalid token
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      setAuthState({
+        token: null,
+        decodedToken: null,
+        isLoading: false,
+        error: null
+      });
+      return;
+    }
+
+    const decoded = verifyToken(token);
+    if (!decoded) {
       localStorage.removeItem('auth_token');
+      setAuthState({
+        token: null,
+        decodedToken: null,
+        isLoading: false,
+        error: 'Invalid or expired token'
+      });
+      return;
     }
 
-    // Check URL token
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlToken = urlParams.get('token');
-    
-    if (urlToken) {
-      const decoded = verifyToken(urlToken);
-      if (decoded) {
-        // Store valid token
-        localStorage.setItem('auth_token', urlToken);
-        setAuthState({
-          token: urlToken,
-          user: decoded,
-          isLoading: false
-        });
-        // Clean URL
-        window.history.replaceState({}, document.title, window.location.pathname);
-        return;
-      }
-    }
-
-    setAuthState(prev => ({ ...prev, isLoading: false }));
+    setAuthState({
+      token,
+      decodedToken: decoded,
+      isLoading: false,
+      error: null
+    });
   }, []);
+
+  const login = (token: string) => {
+    localStorage.setItem('auth_token', token);
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      setAuthState({
+        token: null,
+        decodedToken: null,
+        isLoading: false,
+        error: 'Invalid token'
+      });
+      return;
+    }
+
+    setAuthState({
+      token,
+      decodedToken: decoded,
+      isLoading: false,
+      error: null
+    });
+  };
 
   const logout = () => {
     localStorage.removeItem('auth_token');
     setAuthState({
       token: null,
-      user: null,
-      isLoading: false
+      decodedToken: null,
+      isLoading: false,
+      error: null
     });
   };
 
   return {
     ...authState,
+    login,
     logout
   };
 } 

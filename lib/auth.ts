@@ -7,15 +7,15 @@ if (!JWT_SECRET) {
   throw new Error("JWT_SECRET environment variable is not set");
 }
 
-export interface DecodedToken {
-  userId: string;
+export interface JWTPayload {
+  user_id: string;
   email: string;
   membership: string[];
   exp: number;
 }
 
-interface JWTPayload {
-  user_id: string;
+export interface DecodedToken {
+  userId: string;
   email: string;
   membership: string[];
   exp: number;
