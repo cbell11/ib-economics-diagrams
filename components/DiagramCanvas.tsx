@@ -970,19 +970,30 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   const handleDownload = async (format: 'png' | 'jpg') => {
     setShowFormatDialog(false);
     
-    if (!hasValidMembership()) {
+    console.log("Starting download process...");
+    const hasMembership = hasValidMembership();
+    console.log("Membership check result:", hasMembership);
+
+    if (!hasMembership) {
+      console.log("No valid membership found, showing payment dialog");
       setShowPaymentDialog(true);
       return;
     }
 
     try {
       const stage = stageRef.current;
-      if (!stage) return;
+      if (!stage) {
+        console.error("Stage reference not found");
+        return;
+      }
 
       // Create a temporary canvas with white background
       const tempCanvas = document.createElement('canvas');
       const tempContext = tempCanvas.getContext('2d');
-      if (!tempContext) return;
+      if (!tempContext) {
+        console.error("Could not get canvas context");
+        return;
+      }
 
       // Set canvas dimensions
       tempCanvas.width = stage.width();
@@ -993,6 +1004,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
       tempContext.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
 
       // Draw stage content using toCanvas method
+      console.log("Converting stage to canvas...");
       const stageCanvas = await stage.toCanvas({
         pixelRatio: 2,
         mimeType: format === 'png' ? 'image/png' : 'image/jpeg'
@@ -1000,6 +1012,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
       tempContext.drawImage(stageCanvas, 0, 0);
 
       // Convert to data URL
+      console.log("Creating download URL...");
       const dataURL = tempCanvas.toDataURL(`image/${format}`);
 
       // Create download link
@@ -1007,8 +1020,10 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
       link.download = `diagram.${format}`;
       link.href = dataURL;
       document.body.appendChild(link);
+      console.log("Initiating download...");
       link.click();
       document.body.removeChild(link);
+      console.log("Download completed");
 
     } catch (error) {
       console.error('Error downloading diagram:', error);

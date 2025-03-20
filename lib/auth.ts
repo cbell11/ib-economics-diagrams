@@ -26,16 +26,41 @@ export function verifyToken(token: string): DecodedToken | null {
       return null;
     }
 
+    console.log("Attempting to verify token:", token.substring(0, 10) + "...");
+
     // Decode the token
     const decoded = jwt.verify(token, JWT_SECRET as jwt.Secret) as JWTPayload;
+    console.log("Token decoded successfully:", {
+      user_id: decoded.user_id,
+      email: decoded.email,
+      membership: decoded.membership,
+      exp: decoded.exp
+    });
 
     // Check expiration
-    if (decoded.exp < Date.now() / 1000) {
+    const now = Date.now() / 1000;
+    if (decoded.exp < now) {
+      console.log("Token expired:", {
+        expiration: new Date(decoded.exp * 1000).toISOString(),
+        now: new Date(now * 1000).toISOString()
+      });
       throw new Error("Token expired");
     }
 
     // Ensure membership exists and is valid
-    if (!decoded.membership || !decoded.membership.some((m: string) => VALID_MEMBERSHIPS.includes(m))) {
+    if (!decoded.membership) {
+      console.log("No membership found in token");
+      throw new Error("Unauthorized - No Membership");
+    }
+
+    const validMembership = decoded.membership.some((m: string) => VALID_MEMBERSHIPS.includes(m));
+    console.log("Membership validation:", {
+      userMemberships: decoded.membership,
+      validMemberships: VALID_MEMBERSHIPS,
+      isValid: validMembership
+    });
+
+    if (!validMembership) {
       throw new Error("Unauthorized - Invalid Membership");
     }
 
@@ -57,13 +82,21 @@ export function verifyToken(token: string): DecodedToken | null {
 
 export function getTokenFromLocalStorage(): string | null {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('auth_token');
+  const token = localStorage.getItem('auth_token');
+  console.log("Token from localStorage:", token ? token.substring(0, 10) + "..." : "null");
+  return token;
 }
 
 export function hasValidMembership(): boolean {
+  console.log("Checking for valid membership...");
   const token = getTokenFromLocalStorage();
-  if (!token) return false;
+  if (!token) {
+    console.log("No token found in localStorage");
+    return false;
+  }
   
   const decoded = verifyToken(token);
-  return decoded !== null;
+  const isValid = decoded !== null;
+  console.log("Membership validation result:", isValid);
+  return isValid;
 } 
