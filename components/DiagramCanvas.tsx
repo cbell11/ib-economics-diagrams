@@ -316,7 +316,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
     return { x, y };
   };
 
-  const renderSupplyDemand = () => {
+  const renderSupplyDemand = (isDownload = false) => {
     // Only render supply-demand diagram if type matches
     if (type !== 'supply-demand') {
       return (
@@ -440,8 +440,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
           fill="white"
         />
 
-        {/* Watermarks */}
-        {[0.25, 0.5, 0.75].map((position) => (
+        {/* Watermarks - only show in preview */}
+        {!isDownload && [0.25, 0.5, 0.75].map((position) => (
           <Text
             key={position}
             text="Copyright Diploma Collective"
@@ -1006,12 +1006,49 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
         return;
       }
 
+      // Create a temporary container for the download stage
+      const container = document.createElement('div');
+      document.body.appendChild(container);
+
+      // Create a new stage for the download without watermarks
+      const downloadStage = new Konva.Stage({
+        container: container,
+        width: stage.width(),
+        height: stage.height()
+      });
+
+      // Add a layer with the diagram without watermarks
+      const downloadLayer = new Konva.Layer();
+      downloadStage.add(downloadLayer);
+
+      // Add white background
+      const background = new Konva.Rect({
+        x: 0,
+        y: 0,
+        width: stage.width(),
+        height: stage.height(),
+        fill: 'white'
+      });
+      downloadLayer.add(background);
+
+      // Clone the current stage's content without watermarks
+      const layers = stage.find('Layer') as Konva.Layer[];
+      layers.forEach(layer => {
+        const shapes = layer.getChildren() as Konva.Shape[];
+        shapes.forEach(shape => {
+          if (shape.name() !== 'watermark') {
+            const clone = shape.clone();
+            downloadLayer.add(clone);
+          }
+        });
+      });
+
       // Create a temporary link element
       const link = document.createElement('a');
       link.download = `${settings.title || type}-diagram.${format}`;
       
       // Get the stage data URL
-      const dataUrl = stage.toDataURL({
+      const dataUrl = downloadStage.toDataURL({
         pixelRatio: 2,
         mimeType: format === 'jpg' ? 'image/jpeg' : 'image/png',
         quality: 1
@@ -1020,7 +1057,11 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
       link.href = dataUrl;
       document.body.appendChild(link);
       link.click();
+      
+      // Clean up
       document.body.removeChild(link);
+      downloadStage.destroy();
+      document.body.removeChild(container);
       
       console.log(`Download completed in ${format} format`);
     } catch (error) {
