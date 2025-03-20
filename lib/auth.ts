@@ -30,11 +30,19 @@ export function verifyToken(token: string): DecodedToken | null {
 
     // Decode the token
     const decoded = jwt.verify(token, JWT_SECRET as jwt.Secret) as JWTPayload;
-    console.log("Token decoded successfully:", {
+    console.log("Token decoded successfully. User details:", {
       user_id: decoded.user_id,
       email: decoded.email,
       membership: decoded.membership,
       exp: decoded.exp
+    });
+
+    // Log raw membership data for debugging
+    console.log("Raw membership data:", {
+      membershipArray: decoded.membership,
+      membershipType: typeof decoded.membership,
+      isArray: Array.isArray(decoded.membership),
+      stringified: JSON.stringify(decoded.membership)
     });
 
     // Check expiration
@@ -53,11 +61,13 @@ export function verifyToken(token: string): DecodedToken | null {
       throw new Error("Unauthorized - No Membership");
     }
 
+    // Log membership validation details
     const validMembership = decoded.membership.some((m: string) => VALID_MEMBERSHIPS.includes(m));
-    console.log("Membership validation:", {
+    console.log("Membership validation details:", {
       userMemberships: decoded.membership,
       validMemberships: VALID_MEMBERSHIPS,
-      isValid: validMembership
+      isValid: validMembership,
+      matchingMemberships: decoded.membership.filter((m: string) => VALID_MEMBERSHIPS.includes(m))
     });
 
     if (!validMembership) {
@@ -97,6 +107,6 @@ export function hasValidMembership(): boolean {
   
   const decoded = verifyToken(token);
   const isValid = decoded !== null;
-  console.log("Membership validation result:", isValid);
+  console.log("Final membership validation result:", isValid);
   return isValid;
 } 
