@@ -1,6 +1,6 @@
 export type ElasticityType = 'unitary' | 'relatively-elastic' | 'relatively-inelastic' | 'perfectly-elastic' | 'perfectly-inelastic';
 
-export type DiagramType = 'supply-demand' | 'neo-classical-ad-as' | 'externalities' | 'international-trade';
+export type DiagramType = 'supply-demand' | 'ppf' | 'cost-curves';
 
 export interface DiagramSettings {
   title: string;
@@ -18,8 +18,14 @@ export interface DiagramSettings {
   lineThickness: number;
   primaryColor: string;
   secondaryColor: string;
-  supplyElasticity: 'unitary' | 'relatively-elastic' | 'relatively-inelastic' | 'perfectly-elastic' | 'perfectly-inelastic';
-  demandElasticity: 'unitary' | 'relatively-elastic' | 'relatively-inelastic' | 'perfectly-elastic' | 'perfectly-inelastic';
+  supplyElasticity: ElasticityType;
+  demandElasticity: ElasticityType;
+  lineLabels: {
+    supply: string;
+    demand: string;
+    supply2?: string;
+    supply3?: string;
+  };
   size: number;
 }
 
@@ -41,5 +47,11 @@ export const defaultSettings: DiagramSettings = {
   secondaryColor: '#cc0000',
   supplyElasticity: 'unitary',
   demandElasticity: 'unitary',
+  lineLabels: {
+    supply: 'S',
+    demand: 'D',
+    supply2: 'S₂',
+    supply3: 'S₃'
+  },
   size: 1
 }; 

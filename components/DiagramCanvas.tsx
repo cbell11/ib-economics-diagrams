@@ -65,6 +65,11 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   const [canvasSize, setCanvasSize] = useState(1);
   const [showFormatDialog, setShowFormatDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [supplyLabel, setSupplyLabel] = useState("S");
+  const [demandLabel, setDemandLabel] = useState("D");
+  const [supply1Label, setSupply1Label] = useState("S₁");
+  const [supply2Label, setSupply2Label] = useState("S₂");
+  const [supply3Label, setSupply3Label] = useState("S₃");
 
   interface ColorOption {
     color: string;
@@ -931,7 +936,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
           wordBreak="keep-all"
         />
         <Text
-          text={!showS2 && !showS3 ? "S" : "S₁"}
+          text={!showS2 && !showS3 ? supplyLabel : supply1Label}
           x={supplyPoints[2] + 20}
           y={Math.min(supplyPoints[1], supplyPoints[3]) - 20}
           fontSize={settings.fontSize}
@@ -939,7 +944,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
         />
         {showS2 && clippedShiftedUpPoints && (
           <Text
-            text="S₂"
+            text={supply2Label}
             x={clippedShiftedUpPoints[2] + 20}
             y={Math.min(clippedShiftedUpPoints[1], clippedShiftedUpPoints[3]) - 20}
             fontSize={settings.fontSize}
@@ -948,7 +953,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
         )}
         {showS3 && clippedShiftedDownPoints && (
           <Text
-            text="S₃"
+            text={supply3Label}
             x={clippedShiftedDownPoints[2] + 20}
             y={Math.min(clippedShiftedDownPoints[1], clippedShiftedDownPoints[3]) - 20}
             fontSize={settings.fontSize}
@@ -956,7 +961,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
           />
         )}
         <Text
-          text="D"
+          text={demandLabel}
           x={demandPoints[2] + 20}
           y={Math.min(demandPoints[3] - 30, canvasHeight - 20)}
           fontSize={settings.fontSize}
@@ -1727,6 +1732,69 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                     placeholder="Y-axis label"
                   />
+                </div>
+              </div>
+
+              {/* Line Labels */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-black">Line Labels</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm text-black mb-1">Supply Label</label>
+                    <input
+                      type="text"
+                      value={supplyLabel}
+                      onChange={(e) => setSupplyLabel(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                      placeholder="Supply Label"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-black mb-1">Demand Label</label>
+                    <input
+                      type="text"
+                      value={demandLabel}
+                      onChange={(e) => setDemandLabel(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                      placeholder="Demand Label"
+                    />
+                  </div>
+                  {showS2 && (
+                    <>
+                      <div>
+                        <label className="block text-sm text-black mb-1">Supply 1 Label</label>
+                        <input
+                          type="text"
+                          value={supply1Label}
+                          onChange={(e) => setSupply1Label(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                          placeholder="Supply 1 Label"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-black mb-1">Supply 2 Label</label>
+                        <input
+                          type="text"
+                          value={supply2Label}
+                          onChange={(e) => setSupply2Label(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                          placeholder="Supply 2 Label"
+                        />
+                      </div>
+                    </>
+                  )}
+                  {showS3 && (
+                    <div>
+                      <label className="block text-sm text-black mb-1">Supply 3 Label</label>
+                      <input
+                        type="text"
+                        value={supply3Label}
+                        onChange={(e) => setSupply3Label(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                        placeholder="Supply 3 Label"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
