@@ -6,9 +6,7 @@ import { Stage, Layer, Line, Text, Circle, Rect } from 'react-konva';
 import Konva from 'konva';
 import CanvasControls from './CanvasControls';
 import Image from 'next/image';
-import { verifyToken, JWTPayload } from '../lib/auth';
-import { useRouter } from 'next/router';
-import { useAuth } from '../lib/hooks/useAuth';
+import { hasValidMembership } from '../lib/auth';
 
 type ElasticityType = 'unitary' | 'relatively-elastic' | 'relatively-inelastic' | 'perfectly-elastic' | 'perfectly-inelastic';
 
@@ -68,7 +66,6 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   const [canvasSize, setCanvasSize] = useState(1);
   const [showFormatDialog, setShowFormatDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const { user, isLoading } = useAuth();
 
   interface ColorOption {
     color: string;
@@ -971,33 +968,52 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   };
 
   const handleDownload = async (format: 'png' | 'jpg') => {
-    if (isLoading) {
-      return; // Wait for auth check
-    }
-
-    if (!user || !user.membership_type) {
+    setShowFormatDialog(false);
+    
+    if (!hasValidMembership()) {
       setShowPaymentDialog(true);
       return;
     }
 
     try {
-      if (stageRef.current) {
-        const dataURL = stageRef.current.toDataURL({ 
-          pixelRatio: 2,
-          mimeType: format === 'png' ? 'image/png' : 'image/jpeg',
-          quality: 1
-        });
-        
-        const link = document.createElement('a');
-        link.download = `economic-diagram.${format}`;
-        link.href = dataURL;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
+      const stage = stageRef.current;
+      if (!stage) return;
+
+      // Create a temporary canvas with white background
+      const tempCanvas = document.createElement('canvas');
+      const tempContext = tempCanvas.getContext('2d');
+      if (!tempContext) return;
+
+      // Set canvas dimensions
+      tempCanvas.width = stage.width();
+      tempCanvas.height = stage.height();
+
+      // Fill white background
+      tempContext.fillStyle = '#FFFFFF';
+      tempContext.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+      // Draw stage content using toCanvas method
+      const stageCanvas = await stage.toCanvas({
+        pixelRatio: 2,
+        mimeType: format === 'png' ? 'image/png' : 'image/jpeg'
+      });
+      tempContext.drawImage(stageCanvas, 0, 0);
+
+      // Convert to data URL
+      const dataURL = tempCanvas.toDataURL(`image/${format}`);
+
+      // Create download link
+      const link = document.createElement('a');
+      link.download = `diagram.${format}`;
+      link.href = dataURL;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
     } catch (error) {
-      console.error('Error during download:', error);
-      setShowPaymentDialog(true);
+      console.error('Error downloading diagram:', error);
+      // Show error message to user
+      alert('Failed to download diagram. Please try again.');
     }
   };
 

@@ -1,51 +1,59 @@
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET as string;
+const JWT_SECRET = process.env.JWT_SECRET;
+const VALID_MEMBERSHIPS = ["478", "479", "3451"]; // Allowed MemberPress IDs
 
 if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is not set');
+  throw new Error("JWT_SECRET environment variable is not set");
 }
 
-export interface JWTPayload {
-  user_id: string;
+export interface DecodedToken {
+  userId: string;
   email: string;
-  membership_type: 'pro' | 'student' | null;
+  membership: string[];
   exp: number;
-  iat: number;
 }
 
-export function generateToken(payload: Omit<JWTPayload, 'exp' | 'iat'>): string {
-  return jwt.sign(
-    {
-      ...payload,
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + (15 * 60) // 15 minutes
-    },
-    JWT_SECRET
-  );
-}
-
-export function verifyToken(token: string): JWTPayload | null {
+export function verifyToken(token: string): DecodedToken | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
-    
-    // Double-check expiration
-    const currentTime = Math.floor(Date.now() / 1000);
-    if (decoded.exp < currentTime) {
-      return null;
+    // Decode the token
+    const decoded = jwt.verify(token, JWT_SECRET as jwt.Secret) as any;
+
+    // Check expiration
+    if (decoded.exp < Date.now() / 1000) {
+      throw new Error("Token expired");
     }
 
-    return decoded;
-  } catch (error) {
-    console.error('JWT verification error:', error);
+    // Ensure membership exists and is valid
+    if (!decoded.membership || !decoded.membership.some((m: string) => VALID_MEMBERSHIPS.includes(m))) {
+      throw new Error("Unauthorized - Invalid Membership");
+    }
+
+    return {
+      userId: decoded.user_id,
+      email: decoded.email,
+      membership: decoded.membership,
+      exp: decoded.exp
+    };
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("JWT Verification Failed:", error.message);
+    } else {
+      console.error("JWT Verification Failed with unknown error");
+    }
     return null;
   }
 }
 
-export function isTokenExpired(token: string): boolean {
-  const decoded = verifyToken(token);
-  if (!decoded) return true;
+export function getTokenFromLocalStorage(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('auth_token');
+}
+
+export function hasValidMembership(): boolean {
+  const token = getTokenFromLocalStorage();
+  if (!token) return false;
   
-  const currentTime = Math.floor(Date.now() / 1000);
-  return decoded.exp < currentTime;
+  const decoded = verifyToken(token);
+  return decoded !== null;
 } 
