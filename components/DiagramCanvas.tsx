@@ -6,6 +6,9 @@ import { Stage, Layer, Line, Text, Circle, Rect } from 'react-konva';
 import Konva from 'konva';
 import CanvasControls from './CanvasControls';
 import Image from 'next/image';
+import { verifyToken, JWTPayload } from '../lib/auth';
+import { useRouter } from 'next/router';
+import { useAuth } from '../lib/hooks/useAuth';
 
 type ElasticityType = 'unitary' | 'relatively-elastic' | 'relatively-inelastic' | 'perfectly-elastic' | 'perfectly-inelastic';
 
@@ -65,6 +68,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   const [canvasSize, setCanvasSize] = useState(1);
   const [showFormatDialog, setShowFormatDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const { user, isLoading } = useAuth();
 
   interface ColorOption {
     color: string;
@@ -967,32 +971,21 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   };
 
   const handleDownload = async (format: 'png' | 'jpg') => {
-    setShowFormatDialog(false);
-    
-    // Get the user ID from the URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const userId = urlParams.get('userId');
+    if (isLoading) {
+      return; // Wait for auth check
+    }
 
-    if (!userId) {
+    if (!user || !user.membership_type) {
       setShowPaymentDialog(true);
       return;
     }
 
     try {
-      // Check membership status with MemberPress API
-      const response = await fetch(`/api/check-membership?userId=${userId}`);
-      const data = await response.json();
-
-      if (!data.hasMembership) {
-        setShowPaymentDialog(true);
-        return;
-      }
-
-      // If membership is valid, proceed with download
       if (stageRef.current) {
         const dataURL = stageRef.current.toDataURL({ 
           pixelRatio: 2,
-          mimeType: format === 'png' ? 'image/png' : 'image/jpeg'
+          mimeType: format === 'png' ? 'image/png' : 'image/jpeg',
+          quality: 1
         });
         
         const link = document.createElement('a');
@@ -1003,7 +996,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
         document.body.removeChild(link);
       }
     } catch (error) {
-      console.error('Error checking membership:', error);
+      console.error('Error during download:', error);
       setShowPaymentDialog(true);
     }
   };
