@@ -4151,7 +4151,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                           href="#" 
                           onClick={(e) => {
                             e.preventDefault();
-                            window.location.href = "https://econograph.diplomacollective.com/sign-in";
+                            window.location.href = "https://diplomacollective.com/home/for-students/econgraph-pro";
                           }}
                           className="text-blue-500 hover:text-blue-600 flex items-center gap-2 text-sm"
                         >
