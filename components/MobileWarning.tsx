@@ -3,15 +3,13 @@
 import { useEffect, useState } from 'react';
 
 const MobileWarning = () => {
-  const [isMobile, setIsMobile] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
 
   useEffect(() => {
     // Check if device is mobile
     const checkMobile = () => {
-      const mobile = window.innerWidth <= 768;
-      setIsMobile(mobile);
-      setShowWarning(mobile);
+      const isMobile = window.innerWidth <= 768;
+      setShowWarning(isMobile);
     };
 
     checkMobile();
