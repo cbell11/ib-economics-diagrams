@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { DiagramSettings, defaultSettings, DiagramType } from '../types/diagram';
+import { DiagramSettings, defaultSettings, DiagramType, DiagramTypes } from '../types/diagram';
 
 const DiagramCanvas = dynamic(() => import('./DiagramCanvas'), {
   ssr: false
@@ -28,8 +28,8 @@ const EconomicDiagram = ({ type, title }: EconomicDiagramProps) => {
     setMounted(true);
   }, []);
 
-  // Only render supply-demand diagram for now
-  if (type !== 'supply-demand') {
+  // Show "Coming Soon" for unimplemented diagrams
+  if (type !== DiagramTypes.SUPPLY_DEMAND && type !== DiagramTypes.EXTERNALITIES) {
     return (
       <div className="w-full h-96 flex items-center justify-center">
         <p className="text-xl text-gray-600">Coming Soon</p>
@@ -42,7 +42,7 @@ const EconomicDiagram = ({ type, title }: EconomicDiagramProps) => {
       <div className="flex flex-col gap-4">
         <DiagramCanvas
           settings={settings}
-          type="supply-demand"
+          type={type}
           showS2={showS2}
           showS3={showS3}
           showPriceCeiling={showPriceCeiling}

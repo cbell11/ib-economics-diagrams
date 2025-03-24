@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, forwardRef, useRef, useImperativeHandle } from 'react';
-import { DiagramSettings, DiagramType } from '../types/diagram';
+import { DiagramSettings, DiagramType, DiagramTypes } from '../types/diagram';
 import { Stage, Layer, Line, Text, Circle, Rect } from 'react-konva';
 import Konva from 'konva';
 import CanvasControls from './CanvasControls';
@@ -49,11 +49,11 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   const [showWelfareLoss, setShowWelfareLoss] = useState(false);
   const [priceCeilingHeight, setPriceCeilingHeight] = useState(40);
   const [priceFloorHeight, setPriceFloorHeight] = useState(-40);
-  const [welfareLossColor, setWelfareLossColor] = useState('#666666'); // Dark gray default
+  const [welfareLossColor, setWelfareLossColor] = useState('#666666');
   const [welfareLossFillOpacity, setWelfareLossFillOpacity] = useState(0.3);
   const [welfareLossStrokeOpacity, setWelfareLossStrokeOpacity] = useState(0.5);
-  const [shadingColor, setShadingColor] = useState('#90EE90'); // Light green default
-  const [subsidyShadingColor, setSubsidyShadingColor] = useState('#90EE90'); // Light green default
+  const [shadingColor, setShadingColor] = useState('#90EE90');
+  const [subsidyShadingColor, setSubsidyShadingColor] = useState('#90EE90');
   const [fillOpacity, setFillOpacity] = useState(0.3);
   const [strokeOpacity, setStrokeOpacity] = useState(0.5);
   const [subsidyFillOpacity, setSubsidyFillOpacity] = useState(0.3);
@@ -70,6 +70,27 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   const [supply1Label, setSupply1Label] = useState("S₁");
   const [supply2Label, setSupply2Label] = useState("S₂");
   const [supply3Label, setSupply3Label] = useState("S₃");
+  const [showPositiveConsumptionExternality, setShowPositiveConsumptionExternality] = useState(false);
+  const [mpbDistance, setMpbDistance] = useState(70);
+  const [showNegativeConsumptionExternality, setShowNegativeConsumptionExternality] = useState(false);
+  const [negMpbDistance, setNegMpbDistance] = useState(70);
+  const [showPositiveProductionExternality, setShowPositiveProductionExternality] = useState(false);
+  const [mpcDistance, setMpcDistance] = useState(150);
+  // Add new state variables
+  const [showNegativeProductionExternality, setShowNegativeProductionExternality] = useState(false);
+  const [negMpcDistance, setNegMpcDistance] = useState(150);
+  // Add state for tax button
+  const [showTax, setShowTax] = useState(false);
+  const [taxDistance, setTaxDistance] = useState(150);
+  // Add state for subsidy button
+  const [showSubsidy, setShowSubsidy] = useState(false);
+  const [subsidyDistance, setSubsidyDistance] = useState(70);
+  // Add state for negative advertising/education
+  const [showNegativeAdvertising, setShowNegativeAdvertising] = useState(false);
+  const [negativeAdvertisingDistance, setNegativeAdvertisingDistance] = useState(70);
+  // Add state for positive advertising/education
+  const [showPositiveAdvertising, setShowPositiveAdvertising] = useState(false);
+  const [positiveAdvertisingDistance, setPositiveAdvertisingDistance] = useState(70);
 
   interface ColorOption {
     color: string;
@@ -347,21 +368,14 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
       const minX = 160;  // Left boundary
       const maxX = canvasWidth - 90;  // Right boundary
 
-      // If the entire line is outside boundaries, return null
-      if ((y1 < minY && y2 < minY) || 
-          (y1 > maxY && y2 > maxY)) {
-        return null;
-      }
-
+      // Calculate slope
+      const slope = (y2 - y1) / (x2 - x1);
       let clippedX1 = x1;
       let clippedY1 = y1;
       let clippedX2 = x2;
       let clippedY2 = y2;
 
-      // Calculate slope
-      const slope = (y2 - y1) / (x2 - x1);
-
-      // Clip at top boundary
+      // Clip at boundaries
       if (y1 < minY) {
         clippedX1 = x1 + (minY - y1) / slope;
         clippedY1 = minY;
@@ -371,7 +385,6 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
         clippedY2 = minY;
       }
 
-      // Clip at bottom boundary (x-axis)
       if (y1 > maxY) {
         clippedX1 = x1 + (maxY - y1) / slope;
         clippedY1 = maxY;
@@ -381,17 +394,33 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
         clippedY2 = maxY;
       }
 
-      // For S3 line, extend the other end when one end is clipped
+      if (clippedX1 < minX) {
+        clippedX1 = minX;
+        clippedY1 = y1 + slope * (minX - x1);
+      }
+      if (clippedX2 < minX) {
+        clippedX2 = minX;
+        clippedY2 = y2 + slope * (minX - x2);
+      }
+
+      if (clippedX1 > maxX) {
+        clippedX1 = maxX;
+        clippedY1 = y1 + slope * (maxX - x1);
+      }
+      if (clippedX2 > maxX) {
+        clippedX2 = maxX;
+        clippedY2 = y2 + slope * (maxX - x2);
+      }
+
+      // For S3 line, handle special extension but ensure it doesn't go below x-axis
       if (showS3) {
         if (x1 < minX) {
-          // If left end is clipped, extend right end
-          const extension = (minX - x1) * 1.5; // Extend by 1.5x the clipped amount
-          clippedX2 = x2 + extension;
+          const extension = (minX - x1) * 1.5;
+          clippedX2 = Math.min(maxX, x2 + extension);
           clippedY2 = y2 + slope * extension;
         } else if (x2 > maxX) {
-          // If right end is clipped, extend left end
-          const extension = (x2 - maxX) * 1.5; // Extend by 1.5x the clipped amount
-          clippedX1 = x1 - extension;
+          const extension = (x2 - maxX) * 1.5;
+          clippedX1 = Math.max(minX, x1 - extension);
           clippedY1 = y1 - slope * extension;
         }
 
@@ -404,6 +433,11 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
           clippedY2 = maxY;
           clippedX2 = x2 + (maxY - y2) / slope;
         }
+      }
+
+      // For demand line, ensure it extends fully to its label
+      if (x1 > x2) {  // This is the demand line
+        return [x1, y1, x2, y2];  // Return original points without clipping
       }
 
       return [clippedX1, clippedY1, clippedX2, clippedY2];
@@ -971,6 +1005,1290 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
     );
   };
 
+  const renderExternalities = (isDownload = false) => {
+    const mscPoints = calculateLinePoints(true);
+    const msbPoints = calculateLinePoints(false);
+
+    // Calculate shifted MPB points for positive consumption externality
+    const shiftedMpbPoints = showPositiveConsumptionExternality ? (() => {
+      const unclippedPoints = [
+        msbPoints[0] - mpbDistance * 0.5,
+        msbPoints[1] + mpbDistance,
+        msbPoints[2] - mpbDistance * 0.5,
+        msbPoints[3] + mpbDistance
+      ];
+
+      // Clip at boundaries
+      const maxY = canvasHeight - 70; // x-axis boundary
+      const minY = 80; // y-axis top boundary
+      const minX = 160; // y-axis left boundary
+      const maxX = msbPoints[2]; // MSB endpoint
+      const [x1, y1, x2, y2] = unclippedPoints;
+      
+      if ((y1 > maxY && y2 > maxY) || (y1 < minY && y2 < minY)) {
+        return null;
+      }
+      
+      const slope = (y2 - y1) / (x2 - x1);
+      let clippedX1 = x1;
+      let clippedY1 = y1;
+      let clippedX2 = x2;
+      let clippedY2 = y2;
+      
+      // Clip at x-axis (bottom)
+      if (y2 > maxY) {
+        const dx = (maxY - y1) / slope;
+        clippedX2 = x1 + dx;
+        clippedY2 = maxY;
+      }
+      
+      if (y1 > maxY) {
+        const dx = (maxY - y2) / slope;
+        clippedX1 = x2 - dx;
+        clippedY1 = maxY;
+      }
+
+      // Clip at y-axis top
+      if (y2 < minY) {
+        const dx = (minY - y1) / slope;
+        clippedX2 = x1 + dx;
+        clippedY2 = minY;
+      }
+      
+      if (y1 < minY) {
+        const dx = (minY - y2) / slope;
+        clippedX1 = x2 - dx;
+        clippedY1 = minY;
+      }
+
+      // Clip at y-axis (left)
+      if (clippedX1 < minX) {
+        clippedX1 = minX;
+        clippedY1 = y1 + slope * (minX - x1);
+      }
+      if (clippedX2 < minX) {
+        clippedX2 = minX;
+        clippedY2 = y2 + slope * (minX - x2);
+      }
+
+      // Clip at MSB endpoint (right)
+      if (clippedX1 > maxX) {
+        clippedX1 = maxX;
+        clippedY1 = y1 + slope * (maxX - x1);
+      }
+      if (clippedX2 > maxX) {
+        clippedX2 = maxX;
+        clippedY2 = y2 + slope * (maxX - x2);
+      }
+      
+      return [clippedX1, clippedY1, clippedX2, clippedY2];
+    })() : null;
+
+    // Calculate shifted MPB points for negative consumption externality
+    const negativeShiftedMpbPoints = showNegativeConsumptionExternality ? (() => {
+      const unclippedPoints = [
+        msbPoints[0] + negMpbDistance * 0.5,
+        msbPoints[1] - negMpbDistance,
+        msbPoints[2] + negMpbDistance * 0.5,
+        msbPoints[3] - negMpbDistance
+      ];
+
+      // Clip at boundaries
+      const maxY = canvasHeight - 70; // x-axis boundary
+      const minY = 80; // y-axis top boundary
+      const minX = 160; // y-axis left boundary
+      const maxX = msbPoints[2]; // MSB endpoint
+      const [x1, y1, x2, y2] = unclippedPoints;
+      
+      const slope = (y2 - y1) / (x2 - x1);
+      let clippedX1 = x1;
+      let clippedY1 = y1;
+      let clippedX2 = x2;
+      let clippedY2 = y2;
+      
+      // Clip at x-axis (bottom)
+      if (y2 > maxY) {
+        clippedX2 = x1 + (maxY - y1) / slope;
+        clippedY2 = maxY;
+      }
+      
+      if (y1 > maxY) {
+        clippedX1 = x2 - (y2 - maxY) / slope;
+        clippedY1 = maxY;
+      }
+
+      // Clip at y-axis top
+      if (y2 < minY) {
+        clippedX2 = x1 + (minY - y1) / slope;
+        clippedY2 = minY;
+      }
+      
+      if (y1 < minY) {
+        clippedX1 = x2 - (y2 - minY) / slope;
+        clippedY1 = minY;
+      }
+
+      // Clip at y-axis (left)
+      if (clippedX1 < minX) {
+        clippedX1 = minX;
+        clippedY1 = y1 + slope * (minX - x1);
+      }
+      if (clippedX2 < minX) {
+        clippedX2 = minX;
+        clippedY2 = y2 + slope * (minX - x2);
+      }
+
+      // Clip at MSB endpoint (right)
+      if (clippedX1 > maxX) {
+        clippedX1 = maxX;
+        clippedY1 = y1 + slope * (maxX - x1);
+      }
+      if (clippedX2 > maxX) {
+        clippedX2 = maxX;
+        clippedY2 = y2 + slope * (maxX - x2);
+      }
+      
+      return [clippedX1, clippedY1, clippedX2, clippedY2];
+    })() : null;
+
+    // Calculate shifted MPC points for positive production externality with clipping
+    const shiftedMpcPoints = showPositiveProductionExternality ? (() => {
+      const unclippedPoints = [
+        mscPoints[0] - mpcDistance * 0.5,
+        mscPoints[1],
+        mscPoints[2] - mpcDistance * 0.5,
+        mscPoints[3]
+      ];
+
+      // Clip at boundaries
+      const maxY = canvasHeight - 70; // x-axis boundary
+      const minY = 80; // y-axis top boundary
+      const minX = 160; // y-axis left boundary
+      const maxX = msbPoints[2]; // MSB endpoint
+      const [x1, y1, x2, y2] = unclippedPoints;
+      
+      if ((y1 > maxY && y2 > maxY) || (y1 < minY && y2 < minY)) {
+        return null;
+      }
+      
+      const slope = (y2 - y1) / (x2 - x1);
+      let clippedX1 = x1;
+      let clippedY1 = y1;
+      let clippedX2 = x2;
+      let clippedY2 = y2;
+      
+      // Clip at x-axis (bottom)
+      if (y2 > maxY) {
+        const dx = (maxY - y1) / slope;
+        clippedX2 = x1 + dx;
+        clippedY2 = maxY;
+      }
+      
+      if (y1 > maxY) {
+        const dx = (maxY - y2) / slope;
+        clippedX1 = x2 - dx;
+        clippedY1 = maxY;
+      }
+
+      // Clip at y-axis top
+      if (y2 < minY) {
+        const dx = (minY - y1) / slope;
+        clippedX2 = x1 + dx;
+        clippedY2 = minY;
+      }
+      
+      if (y1 < minY) {
+        const dx = (minY - y2) / slope;
+        clippedX1 = x2 - dx;
+        clippedY1 = minY;
+      }
+
+      // Clip at y-axis (left)
+      if (clippedX1 < minX) {
+        clippedX1 = minX;
+        clippedY1 = y1 + slope * (minX - x1);
+      }
+      if (clippedX2 < minX) {
+        clippedX2 = minX;
+        clippedY2 = y2 + slope * (minX - x2);
+      }
+
+      // Clip at MSB endpoint (right)
+      if (clippedX1 > maxX) {
+        clippedX1 = maxX;
+        clippedY1 = y1 + slope * (maxX - x1);
+      }
+      if (clippedX2 > maxX) {
+        clippedX2 = maxX;
+        clippedY2 = y2 + slope * (maxX - x2);
+      }
+      
+      return [clippedX1, clippedY1, clippedX2, clippedY2];
+    })() : null;
+
+    // Calculate shifted MPC points for negative production externality with clipping
+    const shiftedNegMpcPoints = showNegativeProductionExternality ? (() => {
+      const unclippedPoints = [
+        mscPoints[0] + negMpcDistance * 0.5,
+        mscPoints[1],
+        mscPoints[2] + negMpcDistance * 0.5,
+        mscPoints[3]
+      ];
+
+      // Clip at boundaries
+      const maxY = canvasHeight - 70; // x-axis boundary
+      const minY = 80; // y-axis top boundary
+      const minX = 160; // y-axis left boundary
+      const maxX = msbPoints[2]; // MSB endpoint
+      const [x1, y1, x2, y2] = unclippedPoints;
+      
+      if ((y1 > maxY && y2 > maxY) || (y1 < minY && y2 < minY)) {
+        return null;
+      }
+      
+      const slope = (y2 - y1) / (x2 - x1);
+      let clippedX1 = x1;
+      let clippedY1 = y1;
+      let clippedX2 = x2;
+      let clippedY2 = y2;
+      
+      // Clip at x-axis (bottom)
+      if (y2 > maxY) {
+        const dx = (maxY - y1) / slope;
+        clippedX2 = x1 + dx;
+        clippedY2 = maxY;
+      }
+      
+      if (y1 > maxY) {
+        const dx = (maxY - y2) / slope;
+        clippedX1 = x2 - dx;
+        clippedY1 = maxY;
+      }
+
+      // Clip at y-axis top
+      if (y2 < minY) {
+        const dx = (minY - y1) / slope;
+        clippedX2 = x1 + dx;
+        clippedY2 = minY;
+      }
+      
+      if (y1 < minY) {
+        const dx = (minY - y2) / slope;
+        clippedX1 = x2 - dx;
+        clippedY1 = minY;
+      }
+
+      // Clip at y-axis (left)
+      if (clippedX1 < minX) {
+        clippedX1 = minX;
+        clippedY1 = y1 + slope * (minX - x1);
+      }
+      if (clippedX2 < minX) {
+        clippedX2 = minX;
+        clippedY2 = y2 + slope * (minX - x2);
+      }
+
+      // Clip at MSB endpoint (right)
+      if (clippedX1 > maxX) {
+        clippedX1 = maxX;
+        clippedY1 = y1 + slope * (maxX - x1);
+      }
+      if (clippedX2 > maxX) {
+        clippedX2 = maxX;
+        clippedY2 = y2 + slope * (maxX - x2);
+      }
+      
+      return [clippedX1, clippedY1, clippedX2, clippedY2];
+    })() : null;
+
+    // Calculate market equilibrium points
+    const positiveConsumptionEquilibrium = showPositiveConsumptionExternality && shiftedMpbPoints ? 
+      calculateEquilibriumPoint(mscPoints, shiftedMpbPoints) : null;
+
+    const negativeConsumptionEquilibrium = showNegativeConsumptionExternality && negativeShiftedMpbPoints ? 
+      calculateEquilibriumPoint(mscPoints, negativeShiftedMpbPoints) : null;
+
+    const positiveProductionEquilibrium = showPositiveProductionExternality && shiftedMpcPoints ? 
+      calculateEquilibriumPoint(shiftedMpcPoints, msbPoints) : null;
+
+    const negativeProductionEquilibrium = showNegativeProductionExternality && shiftedNegMpcPoints ? 
+      calculateEquilibriumPoint(shiftedNegMpcPoints, msbPoints) : null;
+
+    // Calculate tax line points
+    const shiftedTaxPoints = showTax ? (() => {
+      const unclippedPoints = [
+        mscPoints[0] - taxDistance * 0.5,
+        mscPoints[1],
+        mscPoints[2] - taxDistance * 0.5,
+        mscPoints[3]
+      ];
+
+      // Clip at boundaries
+      const maxY = canvasHeight - 70; // x-axis boundary
+      const minY = 80; // y-axis top boundary
+      const minX = 160; // y-axis left boundary
+      const maxX = msbPoints[2]; // MSB endpoint
+      const [x1, y1, x2, y2] = unclippedPoints;
+      
+      const slope = (y2 - y1) / (x2 - x1);
+      let clippedX1 = x1;
+      let clippedY1 = y1;
+      let clippedX2 = x2;
+      let clippedY2 = y2;
+      
+      // Apply clipping logic
+      if (y2 > maxY) {
+        clippedX2 = x1 + (maxY - y1) / slope;
+        clippedY2 = maxY;
+      }
+      
+      if (y1 > maxY) {
+        clippedX1 = x2 - (y2 - maxY) / slope;
+        clippedY1 = maxY;
+      }
+
+      if (y2 < minY) {
+        clippedX2 = x1 + (minY - y1) / slope;
+        clippedY2 = minY;
+      }
+      
+      if (y1 < minY) {
+        clippedX1 = x2 - (y2 - minY) / slope;
+        clippedY1 = minY;
+      }
+
+      if (clippedX1 < minX) {
+        clippedX1 = minX;
+        clippedY1 = y1 + slope * (minX - x1);
+      }
+      if (clippedX2 < minX) {
+        clippedX2 = minX;
+        clippedY2 = y2 + slope * (minX - x2);
+      }
+
+      if (clippedX1 > maxX) {
+        clippedX1 = maxX;
+        clippedY1 = y1 + slope * (maxX - x1);
+      }
+      if (clippedX2 > maxX) {
+        clippedX2 = maxX;
+        clippedY2 = y2 + slope * (maxX - x2);
+      }
+      
+      return [clippedX1, clippedY1, clippedX2, clippedY2];
+    })() : null;
+
+    // Calculate tax equilibrium point
+    const taxEquilibrium = showTax && shiftedTaxPoints ? (() => {
+      // Use the appropriate MPB line based on which externality is active
+      let mpbPoints;
+      if (showPositiveConsumptionExternality && shiftedMpbPoints) {
+        mpbPoints = shiftedMpbPoints;
+      } else if (showNegativeConsumptionExternality && negativeShiftedMpbPoints) {
+        mpbPoints = negativeShiftedMpbPoints;
+      } else {
+        mpbPoints = msbPoints; // Default to MSB/MPB line if no externality
+      }
+      return calculateEquilibriumPoint(shiftedTaxPoints, mpbPoints);
+    })() : null;
+
+    // Check for x-axis label collisions
+    const shouldShowQ1Label = (() => {
+      if (!taxEquilibrium) return false;
+
+      // Get positions of other x-axis labels
+      const otherLabelPositions = [];
+      
+      // Add Qfm position if externality equilibrium exists
+      if (showPositiveConsumptionExternality && positiveConsumptionEquilibrium) {
+        otherLabelPositions.push(positiveConsumptionEquilibrium.x);
+      }
+      if (showNegativeConsumptionExternality && negativeConsumptionEquilibrium) {
+        otherLabelPositions.push(negativeConsumptionEquilibrium.x);
+      }
+
+      // Check if Q₁ label would be too close to any other label
+      const labelWidth = 24; // Approximate width of label
+      return !otherLabelPositions.some(x => 
+        Math.abs(x - taxEquilibrium.x) < labelWidth
+      );
+    })();
+
+    // Calculate subsidy line points
+    const shiftedSubsidyPoints = showSubsidy ? (() => {
+      const unclippedPoints = [
+        mscPoints[0],
+        mscPoints[1] + subsidyDistance,  // Changed from - to +
+        mscPoints[2],
+        mscPoints[3] + subsidyDistance   // Changed from - to +
+      ];
+
+      // Clip at boundaries
+      const maxY = canvasHeight - 70; // x-axis boundary
+      const minY = 80; // y-axis top boundary
+      const minX = 160; // y-axis left boundary
+      const maxX = msbPoints[2]; // MSB endpoint
+      const [x1, y1, x2, y2] = unclippedPoints;
+      
+      const slope = (y2 - y1) / (x2 - x1);
+      let clippedX1 = x1;
+      let clippedY1 = y1;
+      let clippedX2 = x2;
+      let clippedY2 = y2;
+      
+      // Apply clipping logic
+      if (y2 > maxY) {
+        clippedX2 = x1 + (maxY - y1) / slope;
+        clippedY2 = maxY;
+      }
+      
+      if (y1 > maxY) {
+        clippedX1 = x2 - (y2 - maxY) / slope;
+        clippedY1 = maxY;
+      }
+
+      if (y2 < minY) {
+        clippedX2 = x1 + (minY - y1) / slope;
+        clippedY2 = minY;
+      }
+      
+      if (y1 < minY) {
+        clippedX1 = x2 - (y2 - minY) / slope;
+        clippedY1 = minY;
+      }
+
+      if (clippedX1 < minX) {
+        clippedX1 = minX;
+        clippedY1 = y1 + slope * (minX - x1);
+      }
+      if (clippedX2 < minX) {
+        clippedX2 = minX;
+        clippedY2 = y2 + slope * (minX - x2);
+      }
+
+      if (clippedX1 > maxX) {
+        clippedX1 = maxX;
+        clippedY1 = y1 + slope * (maxX - x1);
+      }
+      if (clippedX2 > maxX) {
+        clippedX2 = maxX;
+        clippedY2 = y2 + slope * (maxX - x2);
+      }
+      
+      return [clippedX1, clippedY1, clippedX2, clippedY2];
+    })() : null;
+
+    // Calculate negative advertising line points
+    const shiftedNegativeAdvertisingPoints = showNegativeAdvertising ? (() => {
+      const unclippedPoints = [
+        msbPoints[0],
+        msbPoints[1] + negativeAdvertisingDistance,
+        msbPoints[2],
+        msbPoints[3] + negativeAdvertisingDistance
+      ];
+
+      // Clip at boundaries
+      const maxY = canvasHeight - 70; // x-axis boundary
+      const minY = 80; // y-axis top boundary
+      const minX = 160; // y-axis left boundary
+      const maxX = msbPoints[2]; // MSB endpoint
+      const [x1, y1, x2, y2] = unclippedPoints;
+      
+      const slope = (y2 - y1) / (x2 - x1);
+      let clippedX1 = x1;
+      let clippedY1 = y1;
+      let clippedX2 = x2;
+      let clippedY2 = y2;
+      
+      // Apply clipping logic
+      if (y2 > maxY) {
+        clippedX2 = x1 + (maxY - y1) / slope;
+        clippedY2 = maxY;
+      }
+      
+      if (y1 > maxY) {
+        clippedX1 = x2 - (y2 - maxY) / slope;
+        clippedY1 = maxY;
+      }
+
+      if (y2 < minY) {
+        clippedX2 = x1 + (minY - y1) / slope;
+        clippedY2 = minY;
+      }
+      
+      if (y1 < minY) {
+        clippedX1 = x2 - (y2 - minY) / slope;
+        clippedY1 = minY;
+      }
+
+      if (clippedX1 < minX) {
+        clippedX1 = minX;
+        clippedY1 = y1 + slope * (minX - x1);
+      }
+      if (clippedX2 < minX) {
+        clippedX2 = minX;
+        clippedY2 = y2 + slope * (minX - x2);
+      }
+
+      if (clippedX1 > maxX) {
+        clippedX1 = maxX;
+        clippedY1 = y1 + slope * (maxX - x1);
+      }
+      if (clippedX2 > maxX) {
+        clippedX2 = maxX;
+        clippedY2 = y2 + slope * (maxX - x2);
+      }
+      
+      return [clippedX1, clippedY1, clippedX2, clippedY2];
+    })() : null;
+
+    // Calculate positive advertising line points
+    const shiftedPositiveAdvertisingPoints = showPositiveAdvertising ? (() => {
+      const unclippedPoints = [
+        msbPoints[0],
+        msbPoints[1] - positiveAdvertisingDistance,
+        msbPoints[2],
+        msbPoints[3] - positiveAdvertisingDistance
+      ];
+
+      // Clip at boundaries
+      const maxY = canvasHeight - 70; // x-axis boundary
+      const minY = 80; // y-axis top boundary
+      const minX = 160; // y-axis left boundary
+      const maxX = msbPoints[2]; // MSB endpoint
+      const [x1, y1, x2, y2] = unclippedPoints;
+      
+      const slope = (y2 - y1) / (x2 - x1);
+      let clippedX1 = x1;
+      let clippedY1 = y1;
+      let clippedX2 = x2;
+      let clippedY2 = y2;
+      
+      // Apply clipping logic
+      if (y2 > maxY) {
+        clippedX2 = x1 + (maxY - y1) / slope;
+        clippedY2 = maxY;
+      }
+      
+      if (y1 > maxY) {
+        clippedX1 = x2 - (y2 - maxY) / slope;
+        clippedY1 = maxY;
+      }
+
+      if (y2 < minY) {
+        clippedX2 = x1 + (minY - y1) / slope;
+        clippedY2 = minY;
+      }
+      
+      if (y1 < minY) {
+        clippedX1 = x2 - (y2 - minY) / slope;
+        clippedY1 = minY;
+      }
+
+      if (clippedX1 < minX) {
+        clippedX1 = minX;
+        clippedY1 = y1 + slope * (minX - x1);
+      }
+      if (clippedX2 < minX) {
+        clippedX2 = minX;
+        clippedY2 = y2 + slope * (minX - x2);
+      }
+
+      if (clippedX1 > maxX) {
+        clippedX1 = maxX;
+        clippedY1 = y1 + slope * (maxX - x1);
+      }
+      if (clippedX2 > maxX) {
+        clippedX2 = maxX;
+        clippedY2 = y2 + slope * (maxX - x2);
+      }
+      
+      return [clippedX1, clippedY1, clippedX2, clippedY2];
+    })() : null;
+
+    return (
+      <Layer>
+        {/* White Background */}
+        <Rect
+          x={0}
+          y={0}
+          width={canvasWidth + 200}
+          height={canvasHeight}
+          fill="white"
+        />
+
+        {/* Watermarks - only show in preview */}
+        {!isDownload && [0.25, 0.5, 0.75].map((position) => (
+          <Text
+            key={position}
+            text="Copyright Diploma Collective"
+            x={canvasWidth * position}
+            y={canvasHeight / 2}
+            fontSize={16}
+            fill="#4195FF"
+            opacity={0.2}
+            rotation={-45}
+            width={300}
+            align="center"
+            verticalAlign="middle"
+            offsetX={150}
+            offsetY={0}
+            name="watermark"
+          />
+        ))}
+        
+        {/* Title */}
+        <Text
+          text={settings.title || ""}
+          x={(canvasWidth + 200) / 2 - 300}
+          y={20}
+          fontSize={settings.fontSize * 1.2}
+          fill="#000000"
+          width={600}
+          align="center"
+          wrap="none"
+        />
+
+        {/* X and Y axes */}
+        <Line
+          points={[160, canvasHeight - 70, 160 + (canvasHeight - 125), canvasHeight - 70]}
+          stroke="#000000"
+          strokeWidth={settings.lineThickness * 0.75}
+        />
+        <Line
+          points={[160, 80, 160, canvasHeight - 70]}
+          stroke="#000000"
+          strokeWidth={settings.lineThickness * 0.75}
+        />
+
+        {/* Positive MPB curve */}
+        {showPositiveConsumptionExternality && shiftedMpbPoints && (
+          <>
+            <Line
+              points={shiftedMpbPoints}
+              stroke={settings.secondaryColor}
+              strokeWidth={settings.lineThickness}
+            />
+            <Text
+              text="MPB"
+              x={Math.min(shiftedMpbPoints[2], canvasWidth - 90) + 10}
+              y={Math.max(shiftedMpbPoints[3], 80) - 20}
+              fontSize={settings.fontSize}
+              fill={settings.secondaryColor}
+            />
+            {positiveConsumptionEquilibrium && (
+              <>
+                <Line
+                  points={[positiveConsumptionEquilibrium.x, positiveConsumptionEquilibrium.y, positiveConsumptionEquilibrium.x, canvasHeight - 70]}
+                  stroke="#666666"
+                  strokeWidth={1}
+                  dash={[4, 4]}
+                />
+                <Line
+                  points={[160, positiveConsumptionEquilibrium.y, positiveConsumptionEquilibrium.x, positiveConsumptionEquilibrium.y]}
+                  stroke="#666666"
+                  strokeWidth={1}
+                  dash={[4, 4]}
+                />
+                <Circle
+                  x={positiveConsumptionEquilibrium.x}
+                  y={positiveConsumptionEquilibrium.y}
+                  radius={6}
+                  fill="#000000"
+                  stroke="#000000"
+                  strokeWidth={1}
+                />
+                <Text
+                  text="Pfm"
+                  x={125}
+                  y={positiveConsumptionEquilibrium.y - 8}
+                  fontSize={settings.fontSize}
+                  fill="#000000"
+                />
+                <Text
+                  text="Qfm"
+                  x={positiveConsumptionEquilibrium.x - 12}
+                  y={canvasHeight - 55}
+                  fontSize={settings.fontSize}
+                  fill="#000000"
+                />
+              </>
+            )}
+          </>
+        )}
+
+        {/* Negative MPB curve */}
+        {showNegativeConsumptionExternality && negativeShiftedMpbPoints && (
+          <>
+            <Line
+              points={negativeShiftedMpbPoints}
+              stroke={settings.secondaryColor}
+              strokeWidth={settings.lineThickness}
+            />
+            <Text
+              text="MPB"
+              x={negativeShiftedMpbPoints[2] + 10}
+              y={negativeShiftedMpbPoints[3] - 20}
+              fontSize={settings.fontSize}
+              fill={settings.secondaryColor}
+            />
+            {negativeConsumptionEquilibrium && (
+              <>
+                <Line
+                  points={[negativeConsumptionEquilibrium.x, negativeConsumptionEquilibrium.y, negativeConsumptionEquilibrium.x, canvasHeight - 70]}
+                  stroke="#666666"
+                  strokeWidth={1}
+                  dash={[4, 4]}
+                />
+                <Line
+                  points={[160, negativeConsumptionEquilibrium.y, negativeConsumptionEquilibrium.x, negativeConsumptionEquilibrium.y]}
+                  stroke="#666666"
+                  strokeWidth={1}
+                  dash={[4, 4]}
+                />
+                <Circle
+                  x={negativeConsumptionEquilibrium.x}
+                  y={negativeConsumptionEquilibrium.y}
+                  radius={6}
+                  fill="#000000"
+                  stroke="#000000"
+                  strokeWidth={1}
+                />
+                <Text
+                  text="Pfm"
+                  x={125}
+                  y={negativeConsumptionEquilibrium.y - 8}
+                  fontSize={settings.fontSize}
+                  fill="#000000"
+                />
+                <Text
+                  text="Qfm"
+                  x={negativeConsumptionEquilibrium.x - 12}
+                  y={canvasHeight - 55}
+                  fontSize={settings.fontSize}
+                  fill="#000000"
+                />
+              </>
+            )}
+          </>
+        )}
+
+        {/* Positive MPC curve */}
+        {showPositiveProductionExternality && shiftedMpcPoints && (
+          <>
+            <Line
+              points={shiftedMpcPoints}
+              stroke={settings.primaryColor}
+              strokeWidth={settings.lineThickness}
+            />
+            <Text
+              text="MPC"
+              x={Math.min(shiftedMpcPoints[2], canvasWidth - 90) + 10}
+              y={Math.max(shiftedMpcPoints[3], 80) - 20}
+              fontSize={settings.fontSize}
+              fill={settings.primaryColor}
+            />
+            {positiveProductionEquilibrium && (
+              <>
+                <Line
+                  points={[positiveProductionEquilibrium.x, positiveProductionEquilibrium.y, positiveProductionEquilibrium.x, canvasHeight - 70]}
+                  stroke="#666666"
+                  strokeWidth={1}
+                  dash={[4, 4]}
+                />
+                <Line
+                  points={[160, positiveProductionEquilibrium.y, positiveProductionEquilibrium.x, positiveProductionEquilibrium.y]}
+                  stroke="#666666"
+                  strokeWidth={1}
+                  dash={[4, 4]}
+                />
+                <Circle
+                  x={positiveProductionEquilibrium.x}
+                  y={positiveProductionEquilibrium.y}
+                  radius={6}
+                  fill="#000000"
+                  stroke="#000000"
+                  strokeWidth={1}
+                />
+                <Text
+                  text="Pfm"
+                  x={125}
+                  y={positiveProductionEquilibrium.y - 8}
+                  fontSize={settings.fontSize}
+                  fill="#000000"
+                />
+                <Text
+                  text="Qfm"
+                  x={positiveProductionEquilibrium.x - 12}
+                  y={canvasHeight - 55}
+                  fontSize={settings.fontSize}
+                  fill="#000000"
+                />
+              </>
+            )}
+          </>
+        )}
+
+        {/* Negative MPC curve */}
+        {showNegativeProductionExternality && shiftedNegMpcPoints && (
+          <>
+            <Line
+              points={shiftedNegMpcPoints}
+              stroke={settings.primaryColor}
+              strokeWidth={settings.lineThickness}
+            />
+            <Text
+              text="MPC"
+              x={shiftedNegMpcPoints[2] + 10}
+              y={shiftedNegMpcPoints[3] - 20}
+              fontSize={settings.fontSize}
+              fill={settings.primaryColor}
+            />
+            {negativeProductionEquilibrium && (
+              <>
+                <Line
+                  points={[negativeProductionEquilibrium.x, negativeProductionEquilibrium.y, negativeProductionEquilibrium.x, canvasHeight - 70]}
+                  stroke="#666666"
+                  strokeWidth={1}
+                  dash={[4, 4]}
+                />
+                <Line
+                  points={[160, negativeProductionEquilibrium.y, negativeProductionEquilibrium.x, negativeProductionEquilibrium.y]}
+                  stroke="#666666"
+                  strokeWidth={1}
+                  dash={[4, 4]}
+                />
+                <Circle
+                  x={negativeProductionEquilibrium.x}
+                  y={negativeProductionEquilibrium.y}
+                  radius={6}
+                  fill="#000000"
+                  stroke="#000000"
+                  strokeWidth={1}
+                />
+                <Text
+                  text="Pfm"
+                  x={125}
+                  y={negativeProductionEquilibrium.y - 8}
+                  fontSize={settings.fontSize}
+                  fill="#000000"
+                />
+                <Text
+                  text="Qfm"
+                  x={negativeProductionEquilibrium.x - 12}
+                  y={canvasHeight - 55}
+                  fontSize={settings.fontSize}
+                  fill="#000000"
+                />
+              </>
+            )}
+          </>
+        )}
+
+        {/* MSC curve */}
+        <Line
+          points={mscPoints}
+          stroke={settings.primaryColor}
+          strokeWidth={settings.lineThickness}
+        />
+        <Text
+          text={showPositiveProductionExternality || showNegativeProductionExternality ? "MSC" : "MSC/MPC"}
+          x={Math.min(mscPoints[2], canvasWidth - 90) + 10}
+          y={Math.max(mscPoints[3], 80) - 20}
+          fontSize={settings.fontSize}
+          fill={settings.primaryColor}
+        />
+
+        {/* MSB curve */}
+        <Line
+          points={msbPoints}
+          stroke={settings.secondaryColor}
+          strokeWidth={settings.lineThickness}
+        />
+        <Text
+          text={showPositiveConsumptionExternality || showNegativeConsumptionExternality ? "MSB" : "MSB/MPB"}
+          x={msbPoints[2] + 10}
+          y={msbPoints[3] - 20}
+          fontSize={settings.fontSize}
+          fill={settings.secondaryColor}
+        />
+
+        {/* Social optimum equilibrium point and lines */}
+        {(() => {
+          const equilibrium = calculateEquilibriumPoint(mscPoints, msbPoints);
+          return (
+            <>
+              <Line
+                points={[equilibrium.x, equilibrium.y, equilibrium.x, canvasHeight - 70]}
+                stroke="#666666"
+                strokeWidth={1}
+                dash={[4, 4]}
+              />
+              <Line
+                points={[160, equilibrium.y, equilibrium.x, equilibrium.y]}
+                stroke="#666666"
+                strokeWidth={1}
+                dash={[4, 4]}
+              />
+              <Circle
+                x={equilibrium.x}
+                y={equilibrium.y}
+                radius={6}
+                fill="#000000"
+                stroke="#000000"
+                strokeWidth={1}
+              />
+              <Text
+                text="Pso"
+                x={125}
+                y={equilibrium.y - 8}
+                fontSize={settings.fontSize}
+                fill="#000000"
+              />
+              <Text
+                text="Qso"
+                x={equilibrium.x - 12}
+                y={canvasHeight - 55}
+                fontSize={settings.fontSize}
+                fill="#000000"
+              />
+            </>
+          );
+        })()}
+
+        {/* Labels */}
+        <Text
+          text={settings.yAxisLabel}
+          x={60}
+          y={65}
+          fontSize={settings.fontSize}
+          fill="#000000"
+          width={90}
+          align="center"
+          wrap="word"
+          wordBreak="keep-all"
+        />
+        <Text
+          text={settings.xAxisLabel}
+          x={canvasWidth - 100}
+          y={canvasHeight - 55}
+          fontSize={settings.fontSize}
+          fill="#000000"
+          width={200}
+          align="center"
+          wrap="word"
+          wordBreak="keep-all"
+        />
+
+        {/* Tax line and intersection */}
+        {showTax && shiftedTaxPoints && (
+          <>
+            <Line
+              points={shiftedTaxPoints}
+              stroke={settings.primaryColor}
+              strokeWidth={settings.lineThickness}
+            />
+            <Text
+              text="MPC₁"
+              x={shiftedTaxPoints[2] + 10}
+              y={shiftedTaxPoints[3] - 20}
+              fontSize={settings.fontSize}
+              fill={settings.primaryColor}
+            />
+            {taxEquilibrium && (
+              <>
+                <Line
+                  points={[taxEquilibrium.x, taxEquilibrium.y, taxEquilibrium.x, canvasHeight - 70]}
+                  stroke="#666666"
+                  strokeWidth={1}
+                  dash={[4, 4]}
+                />
+                <Line
+                  points={[160, taxEquilibrium.y, taxEquilibrium.x, taxEquilibrium.y]}
+                  stroke="#666666"
+                  strokeWidth={1}
+                  dash={[4, 4]}
+                />
+                <Circle
+                  x={taxEquilibrium.x}
+                  y={taxEquilibrium.y}
+                  radius={6}
+                  fill="#000000"
+                  stroke="#000000"
+                  strokeWidth={1}
+                />
+                <Text
+                  text="P₁"
+                  x={125}
+                  y={taxEquilibrium.y - 8}
+                  fontSize={settings.fontSize}
+                  fill="#000000"
+                />
+                {shouldShowQ1Label && (
+                  <Text
+                    text="Q₁"
+                    x={taxEquilibrium.x - 12}
+                    y={canvasHeight - 55}
+                    fontSize={settings.fontSize}
+                    fill="#000000"
+                  />
+                )}
+              </>
+            )}
+          </>
+        )}
+
+        {/* Subsidy line */}
+        {showSubsidy && shiftedSubsidyPoints && (
+          <>
+            <Line
+              points={shiftedSubsidyPoints}
+              stroke={settings.primaryColor}
+              strokeWidth={settings.lineThickness}
+            />
+            <Text
+              text="MPC₁"
+              x={shiftedSubsidyPoints[2] + 10}
+              y={shiftedSubsidyPoints[3] - 20}
+              fontSize={settings.fontSize}
+              fill={settings.primaryColor}
+            />
+            
+            {/* Add intersection circle and dashed lines */}
+            {(() => {
+              const [x1, y1, x2, y2] = shiftedSubsidyPoints;
+              const slope = (y2 - y1) / (x2 - x1);
+              const yIntercept = y1 - slope * x1;
+              
+              // Calculate intersection with MPB line
+              // Use shifted MPB points if positive consumption externality is active
+              const mpbPointsToUse = showPositiveConsumptionExternality ? shiftedMpbPoints : msbPoints;
+              const mpbSlope = (mpbPointsToUse[3] - mpbPointsToUse[1]) / (mpbPointsToUse[2] - mpbPointsToUse[0]);
+              const mpbYIntercept = mpbPointsToUse[1] - mpbSlope * mpbPointsToUse[0];
+              
+              // Find intersection point
+              const x = (mpbYIntercept - yIntercept) / (slope - mpbSlope);
+              const y = slope * x + yIntercept;
+              
+              // Draw dashed lines
+              return (
+                <>
+                  <Line
+                    points={[x, y, x, canvasHeight - 70]}
+                    stroke="#7F7F7F"
+                    strokeWidth={1}
+                    dash={[5, 5]}
+                  />
+                  <Line
+                    points={[x, y, 160, y]}
+                    stroke="#7F7F7F"
+                    strokeWidth={1}
+                    dash={[5, 5]}
+                  />
+                  <Circle
+                    x={x}
+                    y={y}
+                    radius={7}
+                    fill="#000000"
+                    stroke="white"
+                    strokeWidth={1}
+                  />
+                  <Text
+                    text="Q₁"
+                    x={x - 10}
+                    y={canvasHeight - 70 + 15}
+                    fontSize={settings.fontSize}
+                    fill="#000000"
+                  />
+                  <Text
+                    text="P₁"
+                    x={160 - 30}
+                    y={y - 5}
+                    fontSize={settings.fontSize}
+                    fill="#000000"
+                  />
+                </>
+              );
+            })()}
+          </>
+        )}
+
+        {/* Negative Advertising line */}
+        {showNegativeAdvertising && shiftedNegativeAdvertisingPoints && (
+          <>
+            <Line
+              points={shiftedNegativeAdvertisingPoints}
+              stroke={settings.secondaryColor}
+              strokeWidth={settings.lineThickness}
+            />
+            <Text
+              text="MPB₁"
+              x={shiftedNegativeAdvertisingPoints[2] + 10}
+              y={shiftedNegativeAdvertisingPoints[3] - 20}
+              fontSize={settings.fontSize}
+              fill={settings.secondaryColor}
+            />
+            
+            {/* Add intersection circle and dashed lines */}
+            {(() => {
+              const [x1, y1, x2, y2] = shiftedNegativeAdvertisingPoints;
+              const slope = (y2 - y1) / (x2 - x1);
+              const yIntercept = y1 - slope * x1;
+              
+              // Calculate intersection with MPC line
+              // Use shifted MPC points if negative production externality is active
+              const mpcPointsToUse = showNegativeProductionExternality ? shiftedNegMpcPoints : mscPoints;
+              const mpcSlope = (mpcPointsToUse[3] - mpcPointsToUse[1]) / (mpcPointsToUse[2] - mpcPointsToUse[0]);
+              const mpcYIntercept = mpcPointsToUse[1] - mpcSlope * mpcPointsToUse[0];
+              
+              // Find intersection point
+              const x = (mpcYIntercept - yIntercept) / (slope - mpcSlope);
+              const y = slope * x + yIntercept;
+              
+              // Draw dashed lines
+              return (
+                <>
+                  <Line
+                    points={[x, y, x, canvasHeight - 70]}
+                    stroke="#7F7F7F"
+                    strokeWidth={1}
+                    dash={[5, 5]}
+                  />
+                  <Line
+                    points={[x, y, 160, y]}
+                    stroke="#7F7F7F"
+                    strokeWidth={1}
+                    dash={[5, 5]}
+                  />
+                  <Circle
+                    x={x}
+                    y={y}
+                    radius={7}
+                    fill="#000000"
+                    stroke="white"
+                    strokeWidth={1}
+                  />
+                  <Text
+                    text="Q₁"
+                    x={x - 10}
+                    y={canvasHeight - 70 + 15}
+                    fontSize={settings.fontSize}
+                    fill="#000000"
+                  />
+                  <Text
+                    text="P₁"
+                    x={160 - 30}
+                    y={y - 5}
+                    fontSize={settings.fontSize}
+                    fill="#000000"
+                  />
+                </>
+              );
+            })()}
+          </>
+        )}
+
+        {/* Positive Advertising line */}
+        {showPositiveAdvertising && shiftedPositiveAdvertisingPoints && (
+          <>
+            <Line
+              points={shiftedPositiveAdvertisingPoints}
+              stroke={settings.secondaryColor}
+              strokeWidth={settings.lineThickness}
+            />
+            <Text
+              text="MPB₁"
+              x={shiftedPositiveAdvertisingPoints[2] + 10}
+              y={shiftedPositiveAdvertisingPoints[3] - 20}
+              fontSize={settings.fontSize}
+              fill={settings.secondaryColor}
+            />
+            
+            {/* Add intersection circle and dashed lines */}
+            {(() => {
+              const [x1, y1, x2, y2] = shiftedPositiveAdvertisingPoints;
+              const slope = (y2 - y1) / (x2 - x1);
+              const yIntercept = y1 - slope * x1;
+              
+              // Calculate intersection with MPC line
+              // Use shifted MPC points if positive production externality is active
+              const mpcPointsToUse = showPositiveProductionExternality ? shiftedMpcPoints : mscPoints;
+              const mpcSlope = (mpcPointsToUse[3] - mpcPointsToUse[1]) / (mpcPointsToUse[2] - mpcPointsToUse[0]);
+              const mpcYIntercept = mpcPointsToUse[1] - mpcSlope * mpcPointsToUse[0];
+              
+              // Find intersection point
+              const x = (mpcYIntercept - yIntercept) / (slope - mpcSlope);
+              const y = slope * x + yIntercept;
+              
+              // Draw dashed lines
+              return (
+                <>
+                  <Line
+                    points={[x, y, x, canvasHeight - 70]}
+                    stroke="#7F7F7F"
+                    strokeWidth={1}
+                    dash={[5, 5]}
+                  />
+                  <Line
+                    points={[x, y, 160, y]}
+                    stroke="#7F7F7F"
+                    strokeWidth={1}
+                    dash={[5, 5]}
+                  />
+                  <Circle
+                    x={x}
+                    y={y}
+                    radius={7}
+                    fill="#000000"
+                    stroke="white"
+                    strokeWidth={1}
+                  />
+                  <Text
+                    text="Q₁"
+                    x={x - 10}
+                    y={canvasHeight - 70 + 15}
+                    fontSize={settings.fontSize}
+                    fill="#000000"
+                  />
+                  <Text
+                    text="P₁"
+                    x={160 - 30}
+                    y={y - 5}
+                    fontSize={settings.fontSize}
+                    fill="#000000"
+                  />
+                </>
+              );
+            })()}
+          </>
+        )}
+      </Layer>
+    );
+  };
+
+  const renderDiagram = (isDownload = false) => {
+    switch (type) {
+      case DiagramTypes.SUPPLY_DEMAND:
+        return renderSupplyDemand(isDownload);
+      case DiagramTypes.EXTERNALITIES:
+        return renderExternalities(isDownload);
+      default:
+        return (
+          <Layer>
+            <Text
+              text="This diagram type is not yet implemented"
+              x={canvasWidth / 2}
+              y={canvasHeight / 2}
+              fontSize={16}
+              fill="#666"
+              align="center"
+              width={canvasWidth}
+            />
+          </Layer>
+        );
+    }
+  };
+
   function isValidReferrer(referrer: string): boolean {
     // The main allowed referrer
     const allowedReferrer = "https://diplomacollective.com/home/for-students/econgraph-pro/";
@@ -1118,7 +2436,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
           height={canvasHeight * canvasSize}
           scale={{ x: canvasSize, y: canvasSize }}
         >
-          {renderSupplyDemand()}
+          {renderDiagram()}
         </Stage>
         {mounted && (
           <div style={{ 
@@ -1128,6 +2446,594 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
             gap: '10px',
             maxWidth: (canvasWidth + 200) * canvasSize
           }}>
+            {/* Externalities Section - Only show for externalities diagram */}
+            {type === DiagramTypes.EXTERNALITIES && (
+              <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ 
+                    fontSize: '16px', 
+                    fontWeight: 'bold',
+                    color: '#333',
+                    marginBottom: '4px'
+                  }}>
+                    Add an Externality
+                  </div>
+                  <div style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    gap: '10px'
+                  }}>
+                    {/* First row - Consumption externalities */}
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: '10px', 
+                      alignItems: 'flex-start',
+                      width: '100%'
+                    }}>
+                      {/* Positive Externality */}
+                      <div style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        gap: '5px', 
+                        flex: '1'
+                      }}>
+                        <button
+                          onClick={() => {
+                            setShowPositiveConsumptionExternality(!showPositiveConsumptionExternality);
+                            if (!showPositiveConsumptionExternality) {
+                              setShowNegativeConsumptionExternality(false);
+                            }
+                          }}
+                          style={{
+                            padding: '8px 12px',
+                            backgroundColor: showPositiveConsumptionExternality ? '#4895ef' : '#ffffff',
+                            color: showPositiveConsumptionExternality ? '#ffffff' : '#1f2937',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            transition: 'all 0.2s',
+                            fontWeight: 500,
+                            width: '100%',
+                            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+                            whiteSpace: 'normal',
+                            minHeight: '48px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            textAlign: 'center'
+                          }}
+                        >
+                          Positive Externality of Consumption
+                        </button>
+                        {showPositiveConsumptionExternality && (
+                          <div style={{ 
+                            display: 'flex', 
+                            gap: '5px', 
+                            alignItems: 'center',
+                            backgroundColor: '#f5f5f5',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '12px'
+                          }}>
+                            <label style={{
+                              color: '#1f2937',
+                              fontWeight: 500,
+                              whiteSpace: 'nowrap'
+                            }}>
+                              Gap:
+                            </label>
+                            <input
+                              type="range"
+                              min="0"
+                              max="150"
+                              value={mpbDistance}
+                              onChange={(e) => setMpbDistance(parseInt(e.target.value))}
+                              style={{ 
+                                width: '60px',
+                                accentColor: '#4895ef'
+                              }}
+                            />
+                            <span style={{
+                              color: '#6b7280',
+                              minWidth: '20px'
+                            }}>
+                              {mpbDistance}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Negative Externality */}
+                      <div style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        gap: '5px', 
+                        flex: '1'
+                      }}>
+                        <button
+                          onClick={() => {
+                            setShowNegativeConsumptionExternality(!showNegativeConsumptionExternality);
+                            if (!showNegativeConsumptionExternality) {
+                              setShowPositiveConsumptionExternality(false);
+                            }
+                          }}
+                          style={{
+                            padding: '8px 12px',
+                            backgroundColor: showNegativeConsumptionExternality ? '#4895ef' : '#ffffff',
+                            color: showNegativeConsumptionExternality ? '#ffffff' : '#1f2937',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            transition: 'all 0.2s',
+                            fontWeight: 500,
+                            width: '100%',
+                            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+                            whiteSpace: 'normal',
+                            minHeight: '48px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            textAlign: 'center'
+                          }}
+                        >
+                          Negative Externality of Consumption
+                        </button>
+                        {showNegativeConsumptionExternality && (
+                          <div style={{ 
+                            display: 'flex', 
+                            gap: '5px', 
+                            alignItems: 'center',
+                            backgroundColor: '#f5f5f5',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '12px'
+                          }}>
+                            <label style={{
+                              color: '#1f2937',
+                              fontWeight: 500,
+                              whiteSpace: 'nowrap'
+                            }}>
+                              Gap:
+                            </label>
+                            <input
+                              type="range"
+                              min="0"
+                              max="150"
+                              value={negMpbDistance}
+                              onChange={(e) => setNegMpbDistance(parseInt(e.target.value))}
+                              style={{ 
+                                width: '60px',
+                                accentColor: '#4895ef'
+                              }}
+                            />
+                            <span style={{
+                              color: '#6b7280',
+                              minWidth: '20px'
+                            }}>
+                              {negMpbDistance}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Second row - Production externalities */}
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: '10px', 
+                      alignItems: 'flex-start',
+                      width: '100%'
+                    }}>
+                      {/* Positive Production Externality */}
+                      <div style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        gap: '5px', 
+                        flex: '1'
+                      }}>
+                        <button
+                          onClick={() => {
+                            setShowPositiveProductionExternality(!showPositiveProductionExternality);
+                            if (!showPositiveProductionExternality) {
+                              setShowPositiveConsumptionExternality(false);
+                              setShowNegativeConsumptionExternality(false);
+                              setShowNegativeProductionExternality(false);
+                            }
+                          }}
+                          style={{
+                            padding: '8px 12px',
+                            backgroundColor: showPositiveProductionExternality ? '#4895ef' : '#ffffff',
+                            color: showPositiveProductionExternality ? '#ffffff' : '#1f2937',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            transition: 'all 0.2s',
+                            fontWeight: 500,
+                            width: '100%',
+                            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+                            whiteSpace: 'normal',
+                            minHeight: '48px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            textAlign: 'center'
+                          }}
+                        >
+                          Positive Externality of Production
+                        </button>
+                        {showPositiveProductionExternality && (
+                          <div style={{ 
+                            display: 'flex', 
+                            gap: '5px', 
+                            alignItems: 'center',
+                            backgroundColor: '#f5f5f5',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '12px'
+                          }}>
+                            <label style={{
+                              color: '#1f2937',
+                              fontWeight: 500,
+                              whiteSpace: 'nowrap'
+                            }}>
+                              Gap:
+                            </label>
+                            <input
+                              type="range"
+                              min="120"
+                              max="200"
+                              value={mpcDistance}
+                              onChange={(e) => setMpcDistance(parseInt(e.target.value))}
+                              style={{ 
+                                width: '60px',
+                                accentColor: '#4895ef'
+                              }}
+                            />
+                            <span style={{
+                              color: '#6b7280',
+                              minWidth: '20px'
+                            }}>
+                              {mpcDistance}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Negative Production Externality */}
+                      <div style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        gap: '5px', 
+                        flex: '1'
+                      }}>
+                        <button
+                          onClick={() => {
+                            setShowNegativeProductionExternality(!showNegativeProductionExternality);
+                            if (!showNegativeProductionExternality) {
+                              setShowPositiveProductionExternality(false);
+                              setShowPositiveConsumptionExternality(false);
+                              setShowNegativeConsumptionExternality(false);
+                            }
+                          }}
+                          style={{
+                            padding: '8px 12px',
+                            backgroundColor: showNegativeProductionExternality ? '#4895ef' : '#ffffff',
+                            color: showNegativeProductionExternality ? '#ffffff' : '#1f2937',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            transition: 'all 0.2s',
+                            fontWeight: 500,
+                            width: '100%',
+                            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+                            whiteSpace: 'normal',
+                            minHeight: '48px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            textAlign: 'center'
+                          }}
+                        >
+                          Negative Externality of Production
+                        </button>
+                        {showNegativeProductionExternality && (
+                          <div style={{ 
+                            display: 'flex', 
+                            gap: '5px', 
+                            alignItems: 'center',
+                            backgroundColor: '#f5f5f5',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '12px'
+                          }}>
+                            <label style={{
+                              color: '#1f2937',
+                              fontWeight: 500,
+                              whiteSpace: 'nowrap'
+                            }}>
+                              Gap:
+                            </label>
+                            <input
+                              type="range"
+                              min="120"
+                              max="300"
+                              value={negMpcDistance}
+                              onChange={(e) => setNegMpcDistance(parseInt(e.target.value))}
+                              style={{ 
+                                width: '60px',
+                                accentColor: '#4895ef'
+                              }}
+                            />
+                            <span style={{
+                              color: '#6b7280',
+                              minWidth: '20px'
+                            }}>
+                              {negMpcDistance}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* New Interventions Section */}
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: '10px',
+                  marginTop: '20px'
+                }}>
+                  <div style={{ 
+                    fontSize: '16px', 
+                    fontWeight: 'bold',
+                    color: '#333',
+                    marginBottom: '4px'
+                  }}>
+                    Add an Intervention
+                  </div>
+                  <div style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    gap: '10px'
+                  }}>
+                    {/* First row of intervention buttons */}
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: '10px', 
+                      alignItems: 'flex-start',
+                      width: '100%'
+                    }}>
+                      <div style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        gap: '5px', 
+                        flex: '1'
+                      }}>
+                        <button
+                          onClick={() => {
+                            setShowTax(!showTax);
+                          }}
+                          style={{
+                            padding: '8px 12px',
+                            backgroundColor: showTax ? '#4895ef' : '#ffffff',
+                            color: showTax ? '#ffffff' : '#1f2937',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            transition: 'all 0.2s',
+                            fontWeight: 500,
+                            width: '100%',
+                            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+                            whiteSpace: 'normal',
+                            minHeight: '48px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            textAlign: 'center'
+                          }}
+                        >
+                          Add a Tax/Regulation/Legislation
+                        </button>
+                        {showTax && (
+                          <div style={{ 
+                            display: 'flex', 
+                            gap: '5px', 
+                            alignItems: 'center',
+                            backgroundColor: '#f5f5f5',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '12px'
+                          }}>
+                            <label style={{
+                              color: '#1f2937',
+                              fontWeight: 500,
+                              whiteSpace: 'nowrap'
+                            }}>
+                              Gap:
+                            </label>
+                            <input
+                              type="range"
+                              min="0"
+                              max="500"
+                              value={taxDistance}
+                              onChange={(e) => setTaxDistance(parseInt(e.target.value))}
+                              style={{ 
+                                width: '60px',
+                                accentColor: '#4895ef'
+                              }}
+                            />
+                            <span style={{
+                              color: '#6b7280',
+                              minWidth: '20px'
+                            }}>
+                              {taxDistance}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      {/* Add a Subsidy button */}
+                      <div style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        gap: '8px',
+                        flex: '1'
+                      }}>
+                        <button
+                          onClick={() => {
+                            setShowSubsidy(!showSubsidy);
+                            setShowTax(false);
+                            setShowPositiveConsumptionExternality(false);
+                            setShowNegativeConsumptionExternality(false);
+                            setShowPositiveProductionExternality(false);
+                            setShowNegativeProductionExternality(false);
+                          }}
+                          style={{
+                            padding: '8px 12px',
+                            backgroundColor: showSubsidy ? '#4895ef' : '#ffffff',
+                            color: showSubsidy ? '#ffffff' : '#1f2937',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            transition: 'all 0.2s',
+                            fontWeight: 500,
+                            width: '100%',
+                            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+                            whiteSpace: 'normal',
+                            minHeight: '48px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            textAlign: 'center'
+                          }}
+                        >
+                          Add a Subsidy
+                        </button>
+                        {showSubsidy && (
+                          <div style={{ 
+                            display: 'flex', 
+                            gap: '5px', 
+                            alignItems: 'center',
+                            backgroundColor: '#f5f5f5',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '12px'
+                          }}>
+                            <label style={{
+                              color: '#1f2937',
+                              fontWeight: 500,
+                              whiteSpace: 'nowrap'
+                            }}>
+                              Gap:
+                            </label>
+                            <input
+                              type="range"
+                              min="0"
+                              max="140"
+                              value={subsidyDistance}
+                              onChange={(e) => setSubsidyDistance(parseInt(e.target.value))}
+                              style={{ 
+                                width: '60px',
+                                accentColor: '#4895ef'
+                              }}
+                            />
+                            <span style={{
+                              color: '#6b7280',
+                              minWidth: '20px'
+                            }}>
+                              {subsidyDistance}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {/* Second row of intervention buttons */}
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: '10px', 
+                      alignItems: 'flex-start',
+                      width: '100%'
+                    }}>
+              
+                      <button
+                        onClick={() => {
+                          setShowNegativeAdvertising(!showNegativeAdvertising);
+                          setShowTax(false);
+                          setShowSubsidy(false);
+                          setShowPositiveConsumptionExternality(false);
+                          setShowNegativeConsumptionExternality(false);
+                          setShowPositiveProductionExternality(false);
+                          setShowNegativeProductionExternality(false);
+                        }}
+                        style={{
+                          padding: '8px 12px',
+                          backgroundColor: showNegativeAdvertising ? '#4895ef' : '#ffffff',
+                          color: showNegativeAdvertising ? '#ffffff' : '#1f2937',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          transition: 'all 0.2s',
+                          fontWeight: 500,
+                          flex: '1',
+                          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+                          whiteSpace: 'normal',
+                          minHeight: '48px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          textAlign: 'center'
+                        }}
+                      >
+                        Show Negative Advertising/Education
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowPositiveAdvertising(!showPositiveAdvertising);
+                          setShowTax(false);
+                          setShowSubsidy(false);
+                          setShowNegativeAdvertising(false);
+                          setShowPositiveConsumptionExternality(false);
+                          setShowNegativeConsumptionExternality(false);
+                          setShowPositiveProductionExternality(false);
+                          setShowNegativeProductionExternality(false);
+                        }}
+                        style={{
+                          padding: '8px 12px',
+                          backgroundColor: showPositiveAdvertising ? '#4895ef' : '#ffffff',
+                          color: showPositiveAdvertising ? '#ffffff' : '#1f2937',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          transition: 'all 0.2s',
+                          fontWeight: 500,
+                          flex: '1',
+                          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+                          whiteSpace: 'normal',
+                          minHeight: '48px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          textAlign: 'center'
+                        }}
+                      >
+                        Show Positive Advertising/Education
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Interventions Section - Only show for supply and demand diagram */}
+            {type === DiagramTypes.SUPPLY_DEMAND && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <div style={{ 
                 fontSize: '16px', 
@@ -1219,6 +3125,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                 </button>
               </div>
             </div>
+            )}
+
             {showPriceCeiling && (
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', marginLeft: '20px' }}>
                 <input
@@ -1631,6 +3539,79 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                 )}
               </div>
             )}
+            {showNegativeAdvertising && (
+              <div style={{ 
+                display: 'flex', 
+                gap: '5px', 
+                alignItems: 'center',
+                backgroundColor: '#f5f5f5',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                fontSize: '12px',
+                width: '100%'
+              }}>
+                <label style={{
+                  color: '#1f2937',
+                  fontWeight: 500,
+                  whiteSpace: 'nowrap'
+                }}>
+                  Gap:
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="140"
+                  value={negativeAdvertisingDistance}
+                  onChange={(e) => setNegativeAdvertisingDistance(parseInt(e.target.value))}
+                  style={{ 
+                    width: '60px',
+                    accentColor: '#4895ef'
+                  }}
+                />
+                <span style={{
+                  color: '#6b7280',
+                  minWidth: '20px'
+                }}>
+                  {negativeAdvertisingDistance}
+                </span>
+              </div>
+            )}
+            {showPositiveAdvertising && (
+              <div style={{ 
+                display: 'flex', 
+                gap: '5px', 
+                alignItems: 'center',
+                backgroundColor: '#f5f5f5',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                fontSize: '12px'
+              }}>
+                <label style={{
+                  color: '#1f2937',
+                  fontWeight: 500,
+                  whiteSpace: 'nowrap'
+                }}>
+                  Gap:
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="140"
+                  value={positiveAdvertisingDistance}
+                  onChange={(e) => setPositiveAdvertisingDistance(parseInt(e.target.value))}
+                  style={{ 
+                    width: '60px',
+                    accentColor: '#4895ef'
+                  }}
+                />
+                <span style={{
+                  color: '#6b7280',
+                  minWidth: '20px'
+                }}>
+                  {positiveAdvertisingDistance}
+                </span>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -1670,7 +3651,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                 <h4 className="text-sm font-medium text-black">Line Colors</h4>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-sm text-black mb-1">Supply Line Color</label>
+                    <label className="block text-sm text-black mb-1">Line Colors</label>
                     <div className="flex gap-2 flex-wrap">
                       {standardColors.map((color) => (
                         <button
@@ -1691,7 +3672,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm text-black mb-1">Demand Line Color</label>
+                    <label className="block text-sm text-black mb-1">Line Colors</label>
                     <div className="flex gap-2 flex-wrap">
                       {standardColors.map((color) => (
                         <button
@@ -1736,67 +3717,35 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               </div>
 
               {/* Line Labels */}
-              <div className="space-y-4">
-                <h4 className="text-sm font-medium text-black">Line Labels</h4>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm text-black mb-1">Supply Label</label>
-                    <input
-                      type="text"
-                      value={supplyLabel}
-                      onChange={(e) => setSupplyLabel(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-                      placeholder="Supply Label"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-black mb-1">Demand Label</label>
-                    <input
-                      type="text"
-                      value={demandLabel}
-                      onChange={(e) => setDemandLabel(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-                      placeholder="Demand Label"
-                    />
-                  </div>
-                  {showS2 && (
-                    <>
+              {type === 'supply-demand' && (
+                <>
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium text-black">Line Labels</h4>
+                    <div className="space-y-3">
                       <div>
-                        <label className="block text-sm text-black mb-1">Supply 1 Label</label>
+                        <label className="block text-sm text-black mb-1">Supply Label</label>
                         <input
                           type="text"
-                          value={supply1Label}
-                          onChange={(e) => setSupply1Label(e.target.value)}
+                          value={supplyLabel}
+                          onChange={(e) => setSupplyLabel(e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-                          placeholder="Supply 1 Label"
+                          placeholder="Supply Label"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm text-black mb-1">Supply 2 Label</label>
+                        <label className="block text-sm text-black mb-1">Demand Label</label>
                         <input
                           type="text"
-                          value={supply2Label}
-                          onChange={(e) => setSupply2Label(e.target.value)}
+                          value={demandLabel}
+                          onChange={(e) => setDemandLabel(e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-                          placeholder="Supply 2 Label"
+                          placeholder="Demand Label"
                         />
                       </div>
-                    </>
-                  )}
-                  {showS3 && (
-                    <div>
-                      <label className="block text-sm text-black mb-1">Supply 3 Label</label>
-                      <input
-                        type="text"
-                        value={supply3Label}
-                        onChange={(e) => setSupply3Label(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-                        placeholder="Supply 3 Label"
-                      />
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Right Column */}
