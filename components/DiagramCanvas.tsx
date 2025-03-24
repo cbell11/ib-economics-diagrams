@@ -68,21 +68,19 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   const [supplyLabel, setSupplyLabel] = useState("S");
   const [demandLabel, setDemandLabel] = useState("D");
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [msbLabel, setMsbLabel] = useState("MSB/MPB");
+  const [supply1Label, setSupply1Label] = useState("S₁");
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [mscLabel, setMscLabel] = useState("MSC/MPC");
+  const [supply2Label, setSupply2Label] = useState("S₂");
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [shiftedMpbLabel, setShiftedMpbLabel] = useState("MPB₁");
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [shiftedMpcLabel, setShiftedMpcLabel] = useState("MPC₁");
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [shiftedNegMpcLabel, setShiftedNegMpcLabel] = useState("MPC₁");
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [subsidyLabel, setSubsidyLabel] = useState("MPC₁");
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [shiftedPositiveAdvertisingLabel, setShiftedPositiveAdvertisingLabel] = useState("MPB₁");
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [shiftedNegativeAdvertisingLabel, setShiftedNegativeAdvertisingLabel] = useState("MPB₁");
+  const [supply3Label, setSupply3Label] = useState("S₃");
+  // const [msbLabel, setMsbLabel] = useState("MSB/MPB");
+  // const [mscLabel, setMscLabel] = useState("MSC/MPC");
+  // const [shiftedMpbLabel, setShiftedMpbLabel] = useState("MPB₁");
+  // const [shiftedMpcLabel, setShiftedMpcLabel] = useState("MPC₁");
+  // const [shiftedNegMpcLabel, setShiftedNegMpcLabel] = useState("MPC₁");
+  // const [subsidyLabel, setSubsidyLabel] = useState("MPC₁");
+  // const [shiftedPositiveAdvertisingLabel, setShiftedPositiveAdvertisingLabel] = useState("MPB₁");
+  // const [shiftedNegativeAdvertisingLabel, setShiftedNegativeAdvertisingLabel] = useState("MPB₁");
   const [showPositiveConsumptionExternality, setShowPositiveConsumptionExternality] = useState(false);
   const [mpbDistance, setMpbDistance] = useState(70);
   const [showNegativeConsumptionExternality, setShowNegativeConsumptionExternality] = useState(false);
