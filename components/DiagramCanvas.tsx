@@ -67,28 +67,34 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [supplyLabel, setSupplyLabel] = useState("S");
   const [demandLabel, setDemandLabel] = useState("D");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [supply1Label, setSupply1Label] = useState("S₁");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [supply2Label, setSupply2Label] = useState("S₂");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [supply3Label, setSupply3Label] = useState("S₃");
+  const [msbLabel, setMsbLabel] = useState("MSB/MPB");
+  const [mscLabel, setMscLabel] = useState("MSC/MPC");
+  const [shiftedMpbLabel, setShiftedMpbLabel] = useState("MPB₁");
+  const [shiftedMpcLabel, setShiftedMpcLabel] = useState("MPC₁");
+  const [shiftedNegMpcLabel, setShiftedNegMpcLabel] = useState("MPC₁");
+  const [subsidyLabel, setSubsidyLabel] = useState("MPC₁");
+  const [shiftedPositiveAdvertisingLabel, setShiftedPositiveAdvertisingLabel] = useState("MPB₁");
+  const [shiftedNegativeAdvertisingLabel, setShiftedNegativeAdvertisingLabel] = useState("MPB₁");
   const [showPositiveConsumptionExternality, setShowPositiveConsumptionExternality] = useState(false);
   const [mpbDistance, setMpbDistance] = useState(70);
   const [showNegativeConsumptionExternality, setShowNegativeConsumptionExternality] = useState(false);
   const [negMpbDistance, setNegMpbDistance] = useState(70);
   const [showPositiveProductionExternality, setShowPositiveProductionExternality] = useState(false);
   const [mpcDistance, setMpcDistance] = useState(150);
-  // Add new state variables
   const [showNegativeProductionExternality, setShowNegativeProductionExternality] = useState(false);
   const [negMpcDistance, setNegMpcDistance] = useState(150);
-  // Add state for tax button
   const [showTax, setShowTax] = useState(false);
   const [taxDistance, setTaxDistance] = useState(150);
-  // Add state for subsidy button
   const [showSubsidy, setShowSubsidy] = useState(false);
   const [subsidyDistance, setSubsidyDistance] = useState(70);
-  // Add state for negative advertising/education
   const [showNegativeAdvertising, setShowNegativeAdvertising] = useState(false);
   const [negativeAdvertisingDistance, setNegativeAdvertisingDistance] = useState(70);
-  // Add state for positive advertising/education
   const [showPositiveAdvertising, setShowPositiveAdvertising] = useState(false);
   const [positiveAdvertisingDistance, setPositiveAdvertisingDistance] = useState(70);
 
@@ -155,7 +161,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
       switch (elasticity) {
         case 'unitary':
           angle = -45;
-          lineLength = 80;
+          lineLength = 100;
           break;
         case 'relatively-elastic':
           angle = -20;
@@ -375,7 +381,12 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
       let clippedX2 = x2;
       let clippedY2 = y2;
 
-      // Clip at boundaries
+      // For demand line (which has x1 > x2), return original points without clipping
+      if (x1 > x2) {
+        return points;
+      }
+
+      // Clip at boundaries for other lines
       if (y1 < minY) {
         clippedX1 = x1 + (minY - y1) / slope;
         clippedY1 = minY;
@@ -433,11 +444,6 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
           clippedY2 = maxY;
           clippedX2 = x2 + (maxY - y2) / slope;
         }
-      }
-
-      // For demand line, ensure it extends fully to its label
-      if (x1 > x2) {  // This is the demand line
-        return [x1, y1, x2, y2];  // Return original points without clipping
       }
 
       return [clippedX1, clippedY1, clippedX2, clippedY2];
@@ -970,7 +976,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
           wordBreak="keep-all"
         />
         <Text
-          text={!showS2 && !showS3 ? supplyLabel : supply1Label}
+          text={!showS2 && !showS3 ? supplyLabel : "S"}
           x={supplyPoints[2] + 20}
           y={Math.min(supplyPoints[1], supplyPoints[3]) - 20}
           fontSize={settings.fontSize}
@@ -978,7 +984,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
         />
         {showS2 && clippedShiftedUpPoints && (
           <Text
-            text={supply2Label}
+            text="S + Tax"
             x={clippedShiftedUpPoints[2] + 20}
             y={Math.min(clippedShiftedUpPoints[1], clippedShiftedUpPoints[3]) - 20}
             fontSize={settings.fontSize}
@@ -987,7 +993,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
         )}
         {showS3 && clippedShiftedDownPoints && (
           <Text
-            text={supply3Label}
+            text="S + Sub"
             x={clippedShiftedDownPoints[2] + 20}
             y={Math.min(clippedShiftedDownPoints[1], clippedShiftedDownPoints[3]) - 20}
             fontSize={settings.fontSize}
@@ -996,11 +1002,47 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
         )}
         <Text
           text={demandLabel}
-          x={demandPoints[2] + 20}
-          y={Math.min(demandPoints[3] - 30, canvasHeight - 20)}
+          x={demandPoints[2] - 10}
+          y={Math.min(demandPoints[3] - 50, canvasHeight - 20)}
           fontSize={settings.fontSize}
           fill={settings.secondaryColor}
         />
+
+        {/* Supply line */}
+        <Line
+          points={supplyPoints}
+          stroke={settings.primaryColor}
+          strokeWidth={2}
+          lineCap="round"
+          lineJoin="round"
+        />
+        <Text
+          text={supplyLabel}
+          x={supplyPoints[2] + 20}
+          y={Math.min(supplyPoints[1], supplyPoints[3]) - 20}
+          fontSize={settings.fontSize}
+          fill={settings.primaryColor}
+        />
+
+        {/* Shifted up supply line (S + Tax) */}
+        {showTax && clippedShiftedUpPoints && (
+          <>
+            <Line
+              points={clippedShiftedUpPoints}
+              stroke={settings.primaryColor}
+              strokeWidth={2}
+              lineCap="round"
+              lineJoin="round"
+            />
+            <Text
+              text="S + Tax"
+              x={clippedShiftedUpPoints[2] + 20}
+              y={Math.min(clippedShiftedUpPoints[1], clippedShiftedUpPoints[3]) - 20}
+              fontSize={settings.fontSize}
+              fill={settings.primaryColor}
+            />
+          </>
+        )}
       </Layer>
     );
   };
