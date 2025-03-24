@@ -2102,55 +2102,217 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               const slope = (y2 - y1) / (x2 - x1);
               const yIntercept = y1 - slope * x1;
               
-              // Calculate intersection with MPB line
               // Use shifted MPB points if positive consumption externality is active
               const mpbPointsToUse = showPositiveConsumptionExternality ? shiftedMpbPoints : msbPoints;
-              const mpbSlope = (mpbPointsToUse[3] - mpbPointsToUse[1]) / (mpbPointsToUse[2] - mpbPointsToUse[0]);
-              const mpbYIntercept = mpbPointsToUse[1] - mpbSlope * mpbPointsToUse[0];
-              
-              // Find intersection point
-              const x = (mpbYIntercept - yIntercept) / (slope - mpbSlope);
-              const y = slope * x + yIntercept;
-              
-              // Draw dashed lines
-              return (
-                <>
-                  <Line
-                    points={[x, y, x, canvasHeight - 70]}
-                    stroke="#7F7F7F"
-                    strokeWidth={1}
-                    dash={[5, 5]}
-                  />
-                  <Line
-                    points={[x, y, 160, y]}
-                    stroke="#7F7F7F"
-                    strokeWidth={1}
-                    dash={[5, 5]}
-                  />
-                  <Circle
-                    x={x}
-                    y={y}
-                    radius={7}
-                    fill="#000000"
-                    stroke="white"
-                    strokeWidth={1}
-                  />
-                  <Text
-                    text="Q₁"
-                    x={x - 10}
-                    y={canvasHeight - 70 + 15}
-                    fontSize={settings.fontSize}
-                    fill="#000000"
-                  />
-                  <Text
-                    text="P₁"
-                    x={160 - 30}
-                    y={y - 5}
-                    fontSize={settings.fontSize}
-                    fill="#000000"
-                  />
-                </>
-              );
+              if (mpbPointsToUse) {
+                const mpbSlope = (mpbPointsToUse[3] - mpbPointsToUse[1]) / (mpbPointsToUse[2] - mpbPointsToUse[0]);
+                const mpbYIntercept = mpbPointsToUse[1] - mpbSlope * mpbPointsToUse[0];
+
+                // Find intersection point
+                const x = (mpbYIntercept - yIntercept) / (slope - mpbSlope);
+                const y = slope * x + yIntercept;
+
+                // Draw dashed line and circle at intersection
+                if (!isNaN(x) && !isNaN(y)) {
+                  return (
+                    <>
+                      <Line
+                        points={[x, y, x, canvasHeight - 70]}
+                        stroke="#7F7F7F"
+                        strokeWidth={1}
+                        dash={[5, 5]}
+                      />
+                      <Line
+                        points={[x, y, 160, y]}
+                        stroke="#7F7F7F"
+                        strokeWidth={1}
+                        dash={[5, 5]}
+                      />
+                      <Circle
+                        x={x}
+                        y={y}
+                        radius={7}
+                        fill="#000000"
+                        stroke="white"
+                        strokeWidth={1}
+                      />
+                      <Text
+                        text="Q₁"
+                        x={x - 10}
+                        y={canvasHeight - 70 + 15}
+                        fontSize={settings.fontSize}
+                        fill="#000000"
+                      />
+                      <Text
+                        text="P₁"
+                        x={160 - 30}
+                        y={y - 5}
+                        fontSize={settings.fontSize}
+                        fill="#000000"
+                      />
+                    </>
+                  );
+                }
+              }
+
+              // Use shifted MPC points if negative production externality is active
+              const mpcPointsToUseNegativeFirst = showNegativeProductionExternality ? shiftedNegMpcPoints : mscPoints;
+              if (mpcPointsToUseNegativeFirst) {
+                const mpcSlope = (mpcPointsToUseNegativeFirst[3] - mpcPointsToUseNegativeFirst[1]) / (mpcPointsToUseNegativeFirst[2] - mpcPointsToUseNegativeFirst[0]);
+                const mpcYIntercept = mpcPointsToUseNegativeFirst[1] - mpcSlope * mpcPointsToUseNegativeFirst[0];
+
+                // Find intersection point
+                const x = (mpcYIntercept - yIntercept) / (slope - mpcSlope);
+                const y = slope * x + yIntercept;
+
+                // Draw dashed line and circle at intersection
+                if (!isNaN(x) && !isNaN(y)) {
+                  return (
+                    <>
+                      <Line
+                        points={[x, y, x, canvasHeight - 70]}
+                        stroke="#7F7F7F"
+                        strokeWidth={1}
+                        dash={[5, 5]}
+                      />
+                      <Line
+                        points={[x, y, 160, y]}
+                        stroke="#7F7F7F"
+                        strokeWidth={1}
+                        dash={[5, 5]}
+                      />
+                      <Circle
+                        x={x}
+                        y={y}
+                        radius={7}
+                        fill="#000000"
+                        stroke="white"
+                        strokeWidth={1}
+                      />
+                      <Text
+                        text="Q₁"
+                        x={x - 10}
+                        y={canvasHeight - 70 + 15}
+                        fontSize={settings.fontSize}
+                        fill="#000000"
+                      />
+                      <Text
+                        text="P₁"
+                        x={160 - 30}
+                        y={y - 5}
+                        fontSize={settings.fontSize}
+                        fill="#000000"
+                      />
+                    </>
+                  );
+                }
+              }
+
+              // Calculate intersection with MPC line for negative production externality
+              const mpcPointsToUseNegativeSecond = showNegativeProductionExternality ? shiftedNegMpcPoints : mscPoints;
+              if (mpcPointsToUseNegativeSecond) {
+                const mpcSlope = (mpcPointsToUseNegativeSecond[3] - mpcPointsToUseNegativeSecond[1]) / (mpcPointsToUseNegativeSecond[2] - mpcPointsToUseNegativeSecond[0]);
+                const mpcYIntercept = mpcPointsToUseNegativeSecond[1] - mpcSlope * mpcPointsToUseNegativeSecond[0];
+
+                // Find intersection point
+                const x = (mpcYIntercept - yIntercept) / (slope - mpcSlope);
+                const y = slope * x + yIntercept;
+
+                // Draw dashed line and circle at intersection
+                if (!isNaN(x) && !isNaN(y)) {
+                  return (
+                    <>
+                      <Line
+                        points={[x, y, x, canvasHeight - 70]}
+                        stroke="#7F7F7F"
+                        strokeWidth={1}
+                        dash={[5, 5]}
+                      />
+                      <Line
+                        points={[x, y, 160, y]}
+                        stroke="#7F7F7F"
+                        strokeWidth={1}
+                        dash={[5, 5]}
+                      />
+                      <Circle
+                        x={x}
+                        y={y}
+                        radius={7}
+                        fill="#000000"
+                        stroke="white"
+                        strokeWidth={1}
+                      />
+                      <Text
+                        text="Q₁"
+                        x={x - 10}
+                        y={canvasHeight - 70 + 15}
+                        fontSize={settings.fontSize}
+                        fill="#000000"
+                      />
+                      <Text
+                        text="P₁"
+                        x={160 - 30}
+                        y={y - 5}
+                        fontSize={settings.fontSize}
+                        fill="#000000"
+                      />
+                    </>
+                  );
+                }
+              }
+
+              // Calculate intersection with MPC line for positive production externality
+              const mpcPointsToUsePositive = showPositiveProductionExternality ? shiftedMpcPoints : mscPoints;
+              if (mpcPointsToUsePositive) {
+                const mpcSlope = (mpcPointsToUsePositive[3] - mpcPointsToUsePositive[1]) / (mpcPointsToUsePositive[2] - mpcPointsToUsePositive[0]);
+                const mpcYIntercept = mpcPointsToUsePositive[1] - mpcSlope * mpcPointsToUsePositive[0];
+
+                // Find intersection point
+                const x = (mpcYIntercept - yIntercept) / (slope - mpcSlope);
+                const y = slope * x + yIntercept;
+
+                // Draw dashed line and circle at intersection
+                if (!isNaN(x) && !isNaN(y)) {
+                  return (
+                    <>
+                      <Line
+                        points={[x, y, x, canvasHeight - 70]}
+                        stroke="#7F7F7F"
+                        strokeWidth={1}
+                        dash={[5, 5]}
+                      />
+                      <Line
+                        points={[x, y, 160, y]}
+                        stroke="#7F7F7F"
+                        strokeWidth={1}
+                        dash={[5, 5]}
+                      />
+                      <Circle
+                        x={x}
+                        y={y}
+                        radius={7}
+                        fill="#000000"
+                        stroke="white"
+                        strokeWidth={1}
+                      />
+                      <Text
+                        text="Q₁"
+                        x={x - 10}
+                        y={canvasHeight - 70 + 15}
+                        fontSize={settings.fontSize}
+                        fill="#000000"
+                      />
+                      <Text
+                        text="P₁"
+                        x={160 - 30}
+                        y={y - 5}
+                        fontSize={settings.fontSize}
+                        fill="#000000"
+                      />
+                    </>
+                  );
+                }
+              }
             })()}
           </>
         )}
@@ -2177,55 +2339,58 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               const slope = (y2 - y1) / (x2 - x1);
               const yIntercept = y1 - slope * x1;
               
-              // Calculate intersection with MPC line
               // Use shifted MPC points if negative production externality is active
-              const mpcPointsToUse = showNegativeProductionExternality ? shiftedNegMpcPoints : mscPoints;
-              const mpcSlope = (mpcPointsToUse[3] - mpcPointsToUse[1]) / (mpcPointsToUse[2] - mpcPointsToUse[0]);
-              const mpcYIntercept = mpcPointsToUse[1] - mpcSlope * mpcPointsToUse[0];
-              
-              // Find intersection point
-              const x = (mpcYIntercept - yIntercept) / (slope - mpcSlope);
-              const y = slope * x + yIntercept;
-              
-              // Draw dashed lines
-              return (
-                <>
-                  <Line
-                    points={[x, y, x, canvasHeight - 70]}
-                    stroke="#7F7F7F"
-                    strokeWidth={1}
-                    dash={[5, 5]}
-                  />
-                  <Line
-                    points={[x, y, 160, y]}
-                    stroke="#7F7F7F"
-                    strokeWidth={1}
-                    dash={[5, 5]}
-                  />
-                  <Circle
-                    x={x}
-                    y={y}
-                    radius={7}
-                    fill="#000000"
-                    stroke="white"
-                    strokeWidth={1}
-                  />
-                  <Text
-                    text="Q₁"
-                    x={x - 10}
-                    y={canvasHeight - 70 + 15}
-                    fontSize={settings.fontSize}
-                    fill="#000000"
-                  />
-                  <Text
-                    text="P₁"
-                    x={160 - 30}
-                    y={y - 5}
-                    fontSize={settings.fontSize}
-                    fill="#000000"
-                  />
-                </>
-              );
+              const mpcPointsToUseNegative = showNegativeProductionExternality ? shiftedNegMpcPoints : mscPoints;
+              if (mpcPointsToUseNegative) {
+                const mpcSlope = (mpcPointsToUseNegative[3] - mpcPointsToUseNegative[1]) / (mpcPointsToUseNegative[2] - mpcPointsToUseNegative[0]);
+                const mpcYIntercept = mpcPointsToUseNegative[1] - mpcSlope * mpcPointsToUseNegative[0];
+
+                // Find intersection point
+                const x = (mpcYIntercept - yIntercept) / (slope - mpcSlope);
+                const y = slope * x + yIntercept;
+
+                // Draw dashed line and circle at intersection
+                if (!isNaN(x) && !isNaN(y)) {
+                  return (
+                    <>
+                      <Line
+                        points={[x, y, x, canvasHeight - 70]}
+                        stroke="#7F7F7F"
+                        strokeWidth={1}
+                        dash={[5, 5]}
+                      />
+                      <Line
+                        points={[x, y, 160, y]}
+                        stroke="#7F7F7F"
+                        strokeWidth={1}
+                        dash={[5, 5]}
+                      />
+                      <Circle
+                        x={x}
+                        y={y}
+                        radius={7}
+                        fill="#000000"
+                        stroke="white"
+                        strokeWidth={1}
+                      />
+                      <Text
+                        text="Q₁"
+                        x={x - 10}
+                        y={canvasHeight - 70 + 15}
+                        fontSize={settings.fontSize}
+                        fill="#000000"
+                      />
+                      <Text
+                        text="P₁"
+                        x={160 - 30}
+                        y={y - 5}
+                        fontSize={settings.fontSize}
+                        fill="#000000"
+                      />
+                    </>
+                  );
+                }
+              }
             })()}
           </>
         )}
@@ -2252,55 +2417,58 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               const slope = (y2 - y1) / (x2 - x1);
               const yIntercept = y1 - slope * x1;
               
-              // Calculate intersection with MPC line
               // Use shifted MPC points if positive production externality is active
-              const mpcPointsToUse = showPositiveProductionExternality ? shiftedMpcPoints : mscPoints;
-              const mpcSlope = (mpcPointsToUse[3] - mpcPointsToUse[1]) / (mpcPointsToUse[2] - mpcPointsToUse[0]);
-              const mpcYIntercept = mpcPointsToUse[1] - mpcSlope * mpcPointsToUse[0];
-              
-              // Find intersection point
-              const x = (mpcYIntercept - yIntercept) / (slope - mpcSlope);
-              const y = slope * x + yIntercept;
-              
-              // Draw dashed lines
-              return (
-                <>
-                  <Line
-                    points={[x, y, x, canvasHeight - 70]}
-                    stroke="#7F7F7F"
-                    strokeWidth={1}
-                    dash={[5, 5]}
-                  />
-                  <Line
-                    points={[x, y, 160, y]}
-                    stroke="#7F7F7F"
-                    strokeWidth={1}
-                    dash={[5, 5]}
-                  />
-                  <Circle
-                    x={x}
-                    y={y}
-                    radius={7}
-                    fill="#000000"
-                    stroke="white"
-                    strokeWidth={1}
-                  />
-                  <Text
-                    text="Q₁"
-                    x={x - 10}
-                    y={canvasHeight - 70 + 15}
-                    fontSize={settings.fontSize}
-                    fill="#000000"
-                  />
-                  <Text
-                    text="P₁"
-                    x={160 - 30}
-                    y={y - 5}
-                    fontSize={settings.fontSize}
-                    fill="#000000"
-                  />
-                </>
-              );
+              const mpcPointsToUsePositive = showPositiveProductionExternality ? shiftedMpcPoints : mscPoints;
+              if (mpcPointsToUsePositive) {
+                const mpcSlope = (mpcPointsToUsePositive[3] - mpcPointsToUsePositive[1]) / (mpcPointsToUsePositive[2] - mpcPointsToUsePositive[0]);
+                const mpcYIntercept = mpcPointsToUsePositive[1] - mpcSlope * mpcPointsToUsePositive[0];
+
+                // Find intersection point
+                const x = (mpcYIntercept - yIntercept) / (slope - mpcSlope);
+                const y = slope * x + yIntercept;
+
+                // Draw dashed line and circle at intersection
+                if (!isNaN(x) && !isNaN(y)) {
+                  return (
+                    <>
+                      <Line
+                        points={[x, y, x, canvasHeight - 70]}
+                        stroke="#7F7F7F"
+                        strokeWidth={1}
+                        dash={[5, 5]}
+                      />
+                      <Line
+                        points={[x, y, 160, y]}
+                        stroke="#7F7F7F"
+                        strokeWidth={1}
+                        dash={[5, 5]}
+                      />
+                      <Circle
+                        x={x}
+                        y={y}
+                        radius={7}
+                        fill="#000000"
+                        stroke="white"
+                        strokeWidth={1}
+                      />
+                      <Text
+                        text="Q₁"
+                        x={x - 10}
+                        y={canvasHeight - 70 + 15}
+                        fontSize={settings.fontSize}
+                        fill="#000000"
+                      />
+                      <Text
+                        text="P₁"
+                        x={160 - 30}
+                        y={y - 5}
+                        fontSize={settings.fontSize}
+                        fill="#000000"
+                      />
+                    </>
+                  );
+                }
+              }
             })()}
           </>
         )}
