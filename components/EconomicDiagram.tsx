@@ -29,7 +29,9 @@ const EconomicDiagram = ({ type, title }: EconomicDiagramProps) => {
   }, []);
 
   // Show "Coming Soon" for unimplemented diagrams
-  if (type !== DiagramTypes.SUPPLY_DEMAND && type !== DiagramTypes.EXTERNALITIES) {
+  if (type !== DiagramTypes.SUPPLY_DEMAND && 
+      type !== DiagramTypes.EXTERNALITIES && 
+      type !== DiagramTypes.PPC) {
     return (
       <div className="w-full h-96 flex items-center justify-center">
         <p className="text-xl text-gray-600">Coming Soon</p>
