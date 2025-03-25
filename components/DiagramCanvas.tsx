@@ -2469,6 +2469,26 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
           fill="white"
         />
         
+        {/* Watermarks - only show in preview */}
+        {[0.25, 0.5, 0.75].map((position) => (
+          <Text
+            key={position}
+            text="Copyright Diploma Collective"
+            x={canvasWidth * position}
+            y={canvasHeight / 2}
+            fontSize={16}
+            fill="#4195FF"
+            opacity={0.2}
+            rotation={-45}
+            width={300}
+            align="center"
+            verticalAlign="middle"
+            offsetX={150}
+            offsetY={0}
+            name="watermark"
+          />
+        ))}
+        
         {/* Title */}
         <Text
           text={settings.title || ""}
@@ -4300,38 +4320,100 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
             <div style={{
               display: 'flex',
               flexDirection: 'column',
-              gap: '1rem'
+              gap: '1.5rem'
             }}>
-              <button
-                onClick={handleEconGraphProSubscription}
-                style={{
-                  padding: '0.75rem 1rem',
-                  backgroundColor: '#4895ef',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '1rem',
-                  fontWeight: '500'
-                }}
-              >
-                EconGraph Pro Subscription
-              </button>
-              <button
-                onClick={handleStudentSubscription}
-                style={{
-                  padding: '0.75rem 1rem',
-                  backgroundColor: '#ffffff',
-                  color: '#1f2937',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '1rem',
-                  fontWeight: '500'
-                }}
-              >
-                Student Membership
-              </button>
+              {/* EconGraph Pro Button */}
+              <div>
+                <button
+                  onClick={handleEconGraphProSubscription}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    backgroundColor: '#40b36e',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '1rem',
+                    fontWeight: '500',
+                    width: '100%',
+                    marginBottom: '0.5rem'
+                  }}
+                >
+                  EconGraph Pro Subscription
+                </button>
+                <ul style={{
+                  listStyle: 'disc',
+                  paddingLeft: '1.5rem',
+                  color: '#4b5563',
+                  fontSize: '0.875rem'
+                }}>
+                  <li>Download diagrams without watermarks</li>
+                  <li>Access to all diagram types</li>
+                  <li>Customize colors and styles</li>
+                  <li>Export in high resolution</li>
+                </ul>
+              </div>
+
+              {/* Student Membership Button */}
+              <div>
+                <button
+                  onClick={handleStudentSubscription}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    backgroundColor: '#40b36e',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '1rem',
+                    fontWeight: '500',
+                    width: '100%',
+                    marginBottom: '0.5rem'
+                  }}
+                >
+                  Student Membership
+                </button>
+                <ul style={{
+                  listStyle: 'disc',
+                  paddingLeft: '1.5rem',
+                  color: '#4b5563',
+                  fontSize: '0.875rem'
+                }}>
+                  <li>All EconGraph Pro features</li>
+                  <li>Full access to study notes</li>
+                  <li>Practice questions and solutions</li>
+                  <li>Video explanations</li>
+                </ul>
+              </div>
+
+              {/* Already a member section */}
+              <div style={{
+                borderTop: '1px solid #e5e7eb',
+                paddingTop: '1rem',
+                textAlign: 'center'
+              }}>
+                <p style={{
+                  color: '#4b5563',
+                  marginBottom: '0.5rem',
+                  fontSize: '0.875rem'
+                }}>
+                  Already a member?
+                </p>
+                <a
+                  href="https://diplomacollective.com/home/for-students/econgraph-pro/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: '#40b36e',
+                    textDecoration: 'none',
+                    fontWeight: '500',
+                    fontSize: '0.875rem'
+                  }}
+                >
+                  Login here
+                </a>
+              </div>
+
               <button
                 onClick={() => setShowPaymentDialog(false)}
                 style={{
