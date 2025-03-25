@@ -67,20 +67,9 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [supplyLabel, setSupplyLabel] = useState("S");
   const [demandLabel, setDemandLabel] = useState("D");
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [supply1Label, setSupply1Label] = useState("S₁");
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [supply2Label, setSupply2Label] = useState("S₂");
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [supply3Label, setSupply3Label] = useState("S₃");
-  // const [msbLabel, setMsbLabel] = useState("MSB/MPB");
-  // const [mscLabel, setMscLabel] = useState("MSC/MPC");
-  // const [shiftedMpbLabel, setShiftedMpbLabel] = useState("MPB₁");
-  // const [shiftedMpcLabel, setShiftedMpcLabel] = useState("MPC₁");
-  // const [shiftedNegMpcLabel, setShiftedNegMpcLabel] = useState("MPC₁");
-  // const [subsidyLabel, setSubsidyLabel] = useState("MPC₁");
-  // const [shiftedPositiveAdvertisingLabel, setShiftedPositiveAdvertisingLabel] = useState("MPB₁");
-  // const [shiftedNegativeAdvertisingLabel, setShiftedNegativeAdvertisingLabel] = useState("MPB₁");
   const [showPositiveConsumptionExternality, setShowPositiveConsumptionExternality] = useState(false);
   const [mpbDistance, setMpbDistance] = useState(70);
   const [showNegativeConsumptionExternality, setShowNegativeConsumptionExternality] = useState(false);
@@ -98,8 +87,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   const [showPositiveAdvertising, setShowPositiveAdvertising] = useState(false);
   const [positiveAdvertisingDistance, setPositiveAdvertisingDistance] = useState(70);
   const [opportunityCostType, setOpportunityCostType] = useState<'constant' | 'increasing'>('constant');
-  const [ppcXPosition, setPpcXPosition] = useState(150);
-  const [ppcYPosition, setPpcYPosition] = useState(350);
+  const ppcXPosition = 150;
+  const ppcYPosition = 350;
   const [ppcShift, setPpcShift] = useState<'none' | 'outward' | 'inward'>('none');
 
   interface ColorOption {
@@ -1302,13 +1291,13 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
       // Clip at y-axis top
       if (y2 < minY) {
         const dx = (minY - y1) / slope;
-        clippedX2 = x1 + dx;
+        clippedX2 = x1 + (minY - y1) / slope;
         clippedY2 = minY;
       }
       
       if (y1 < minY) {
         const dx = (minY - y2) / slope;
-        clippedX1 = x2 - dx;
+        clippedX1 = x2 - (y2 - minY) / slope;
         clippedY1 = minY;
       }
 
