@@ -62,8 +62,6 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   const [canvasWidth, setCanvasWidth] = useState(650);
   const [canvasHeight, setCanvasHeight] = useState(600);
   const [canvasSize, setCanvasSize] = useState(1);
-  const [showFormatDialog, setShowFormatDialog] = useState(false);
-  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [supplyLabel, setSupplyLabel] = useState("S");
   const [demandLabel, setDemandLabel] = useState("D");
   const [showPositiveConsumptionExternality, setShowPositiveConsumptionExternality] = useState(false);
@@ -1278,20 +1276,17 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
       }
       
       if (y1 > maxY) {
-        const dx = (maxY - y2) / slope;
-        clippedX1 = x2 - dx;
+        clippedX1 = x2 - (y2 - maxY) / slope;
         clippedY1 = maxY;
       }
 
       // Clip at y-axis top
       if (y2 < minY) {
-        const dx = (minY - y1) / slope;
         clippedX2 = x1 + (minY - y1) / slope;
         clippedY2 = minY;
       }
       
       if (y1 < minY) {
-        const dx = (minY - y2) / slope;
         clippedX1 = x2 - (y2 - minY) / slope;
         clippedY1 = minY;
       }
@@ -2452,7 +2447,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
     );
   };
 
-  const renderPPC = (isDownload = false) => {
+  const renderPPC = () => {
     // Calculate shift offset based on direction
     const shiftOffset = ppcShift === 'none' ? 1 : 
                        ppcShift === 'inward' ? 0.8 : 1.2;
@@ -2472,7 +2467,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
           height={canvasHeight}
           fill="white"
         />
-
+        
         {/* Title */}
         <Text
           text={settings.title || ""}
@@ -2661,28 +2656,16 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
     );
   };
 
-  const renderDiagram = (isDownload = false) => {
+  const renderDiagram = () => {
     switch (type) {
       case DiagramTypes.SUPPLY_DEMAND:
-        return renderSupplyDemand(isDownload);
+        return renderSupplyDemand();
       case DiagramTypes.EXTERNALITIES:
-        return renderExternalities(isDownload);
+        return renderExternalities();
       case DiagramTypes.PPC:
-        return renderPPC(isDownload);
+        return renderPPC();
       default:
-        return (
-          <Layer>
-            <Text
-              text="This diagram type is not yet implemented"
-              x={canvasWidth / 2}
-              y={canvasHeight / 2}
-              fontSize={16}
-              fill="#666"
-              align="center"
-              width={canvasWidth}
-            />
-          </Layer>
-        );
+        return null;
     }
   };
 
@@ -2715,7 +2698,6 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
 
     if (!isValid) {
       console.log("Invalid referrer, showing payment dialog");
-      setShowPaymentDialog(true);
       return;
     }
 
@@ -2786,7 +2768,6 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
       console.log(`Download completed in ${format} format`);
     } catch (error) {
       console.error("Download failed:", error);
-      setShowPaymentDialog(true);
     }
   };
 
@@ -4259,7 +4240,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               {/* Download Diagram Button */}
               <div className="mt-4">
                 <button
-                  onClick={() => setShowFormatDialog(true)}
+                  onClick={() => handleDownload('png')}
                   className="w-full px-4 py-2 text-white rounded-md transition-colors flex items-center justify-center gap-2"
                   style={{
                     backgroundColor: '#40b36e',
