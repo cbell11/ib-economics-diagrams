@@ -11,6 +11,11 @@ function DownloadSuccessContent() {
 
   useEffect(() => {
     const verifyPayment = async () => {
+      if (!searchParams) {
+        setIsVerifying(false);
+        return;
+      }
+
       const sessionId = searchParams.get('session_id');
       if (!sessionId) {
         setIsVerifying(false);
