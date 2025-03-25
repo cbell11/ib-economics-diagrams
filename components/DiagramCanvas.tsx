@@ -2,7 +2,7 @@
 
 import { useState, forwardRef, useRef, useImperativeHandle } from 'react';
 import { DiagramSettings, DiagramType, DiagramTypes } from '../types/diagram';
-import { Stage, Layer, Line, Text, Circle, Rect, Shape } from 'react-konva';
+import { Stage, Layer, Line, Text, Circle, Rect, Shape, Arrow } from 'react-konva';
 import Konva from 'konva';
 import CanvasControls from './CanvasControls';
 import Image from 'next/image';
@@ -97,6 +97,10 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   const [negativeAdvertisingDistance, setNegativeAdvertisingDistance] = useState(70);
   const [showPositiveAdvertising, setShowPositiveAdvertising] = useState(false);
   const [positiveAdvertisingDistance, setPositiveAdvertisingDistance] = useState(70);
+  const [opportunityCostType, setOpportunityCostType] = useState<'constant' | 'increasing'>('constant');
+  const [ppcXPosition, setPpcXPosition] = useState(150);
+  const [ppcYPosition, setPpcYPosition] = useState(350);
+  const [ppcShift, setPpcShift] = useState<'none' | 'outward' | 'inward'>('none');
 
   interface ColorOption {
     color: string;
@@ -2465,6 +2469,15 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   };
 
   const renderPPC = (isDownload = false) => {
+    // Calculate shift offset based on direction
+    const shiftOffset = ppcShift === 'none' ? 1 : 
+                       ppcShift === 'inward' ? 0.8 : 1.2;
+    
+    // Helper function to clip y-coordinate at x-axis
+    const clipYCoordinate = (y: number) => {
+      return Math.min(y, canvasHeight - 70);
+    };
+    
     return (
       <Layer>
         {/* Background */}
@@ -2474,6 +2487,17 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
           width={canvasWidth}
           height={canvasHeight}
           fill="white"
+        />
+
+        {/* Title */}
+        <Text
+          text={settings.title || ""}
+          x={80}
+          y={20}
+          width={canvasWidth}
+          fontSize={settings.fontSize * 1.2}
+          fill="#000000"
+          align="center"
         />
 
         {/* Axes */}
@@ -2488,12 +2512,136 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
           strokeWidth={settings.lineThickness}
         />
 
-        {/* PPC Line - straight line */}
-        <Line
-          points={[160, 80, canvasWidth - 10, canvasHeight - 70]}
-          stroke={settings.primaryColor}
-          strokeWidth={settings.lineThickness}
-        />
+        {/* Original PPC Line */}
+        {opportunityCostType === 'constant' ? (
+          <>
+            <Line
+              points={[160, canvasHeight - ppcYPosition, canvasWidth - ppcXPosition, canvasHeight - 70]}
+              stroke={settings.primaryColor}
+              strokeWidth={settings.lineThickness}
+            />
+            {/* Label for constant PPC */}
+            <Text
+              text="PPC₁"
+              x={canvasWidth - ppcXPosition - 150}
+              y={canvasHeight - ppcYPosition * 0.62}
+              fontSize={settings.fontSize}
+              fill="#000000"
+              rotation={40} // Approximate angle for the constant curve
+            />
+          </>
+        ) : (
+          <>
+            <Line
+              points={[
+                160, canvasHeight - ppcYPosition,
+                160 + (canvasWidth - ppcXPosition - 160) * 0.7, canvasHeight - ppcYPosition * 0.7,
+                canvasWidth - ppcXPosition, canvasHeight - 70
+              ]}
+              stroke={settings.primaryColor}
+              strokeWidth={settings.lineThickness}
+              tension={0.6}
+            />
+            {/* Label for increasing PPC */}
+            <Text
+              text="PPC₁"
+              x={160 + (canvasWidth - ppcXPosition - 160) * 0.7}
+              y={canvasHeight - ppcYPosition * 0.75}
+              fontSize={settings.fontSize}
+              fill="#000000"
+              align="center"
+            />
+          </>
+        )}
+
+        {/* Shifted PPC Line */}
+        {ppcShift !== 'none' && (
+          <>
+            {opportunityCostType === 'constant' ? (
+              <>
+                <Line
+                  points={[
+                    160,
+                    clipYCoordinate(canvasHeight - (ppcYPosition * shiftOffset)),
+                    canvasWidth - (ppcXPosition + ((1 - shiftOffset) * (canvasWidth - ppcXPosition - 160))),
+                    clipYCoordinate(canvasHeight - (70 * shiftOffset))
+                  ]}
+                  stroke={settings.primaryColor}
+                  strokeWidth={settings.lineThickness}
+                />
+                {/* Label for shifted constant PPC */}
+                <Text
+                  text="PPC₂"
+                  x={canvasWidth - ppcXPosition - (ppcShift === 'inward' ? 175 : 100)}
+                  y={canvasHeight - ppcYPosition * (ppcShift === 'inward' ? 0.5 : 0.71)}
+                  fontSize={settings.fontSize}
+                  fill="#000000"
+                  rotation={40}
+                />
+              </>
+            ) : (
+              <>
+                <Line
+                  points={[
+                    160,
+                    clipYCoordinate(canvasHeight - (ppcYPosition * shiftOffset)),
+                    160 + (canvasWidth - ppcXPosition - 160) * 0.7 * shiftOffset,
+                    clipYCoordinate(canvasHeight - (ppcYPosition * 0.7 * shiftOffset)),
+                    canvasWidth - (ppcXPosition + ((1 - shiftOffset) * (canvasWidth - ppcXPosition - 160))),
+                    clipYCoordinate(canvasHeight - (70 * shiftOffset))
+                  ]}
+                  stroke={settings.primaryColor}
+                  strokeWidth={settings.lineThickness}
+                  tension={0.6}
+                />
+                {/* Label for shifted increasing PPC */}
+                <Text
+                  text="PPC₂"
+                  x={160 + (canvasWidth - ppcXPosition - 160) * (ppcShift === 'inward' ? 0.58 : 0.95)}
+                  y={canvasHeight - ppcYPosition * (ppcShift === 'inward' ? 0.6 : 0.8)}
+                  fontSize={settings.fontSize}
+                  fill="#000000"
+                  align="center"
+                />
+              </>
+            )}
+
+            {/* Arrow pointing from original to shifted curve */}
+            {opportunityCostType === 'constant' ? (
+              <Arrow
+                points={[
+                  // Start from original constant curve
+                  canvasWidth - ppcXPosition - (ppcShift === 'inward' ? 100 : 80),
+                  canvasHeight - ppcYPosition * 0.4,
+                  // End at shifted constant curve
+                  canvasWidth - (ppcXPosition + ((1 - shiftOffset) * (canvasWidth - ppcXPosition - 0))) + (ppcShift === 'inward' ? -40 : -120),
+                  canvasHeight - ppcYPosition * 0.4
+                ]}
+                stroke="#000000"
+                strokeWidth={3}
+                fill="#000000"
+                pointerLength={5}
+                pointerWidth={5}
+              />
+            ) : (
+              <Arrow
+                points={[
+                  // Start from original increasing curve
+                  160 + (canvasWidth - ppcXPosition - 160) * 0.89,
+                  canvasHeight - ppcYPosition * 0.5,
+                  // End at shifted increasing curve
+                  160 + (canvasWidth - ppcXPosition - 160) * (ppcShift === 'inward' ? 0.7 : 1),
+                  canvasHeight - ppcYPosition * 0.5
+                ]}
+                stroke="#000000"
+                strokeWidth={3}
+                fill="#000000"
+                pointerLength={5}
+                pointerWidth={5}
+              />
+            )}
+          </>
+        )}
 
         {/* Axis Labels */}
         <Text
@@ -3936,27 +4084,29 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                       ))}
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-sm text-black mb-1">Line Colors</label>
-                    <div className="flex gap-2 flex-wrap">
-                      {standardColors.map((color) => (
-                        <button
-                          key={color.color}
-                          onClick={() => onUpdateSettings({ ...settings, secondaryColor: color.color })}
-                          style={{
-                            width: '24px',
-                            height: '24px',
-                            backgroundColor: color.color,
-                            border: color.color === settings.secondaryColor ? '2px solid #000' : '1px solid #ccc',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            padding: '0'
-                          }}
-                          title={color.name}
-                        />
-                      ))}
+                  {type !== DiagramTypes.PPC && (
+                    <div>
+                      <label className="block text-sm text-black mb-1">Line Colors</label>
+                      <div className="flex gap-2 flex-wrap">
+                        {standardColors.map((color) => (
+                          <button
+                            key={color.color}
+                            onClick={() => onUpdateSettings({ ...settings, secondaryColor: color.color })}
+                            style={{
+                              width: '24px',
+                              height: '24px',
+                              backgroundColor: color.color,
+                              border: color.color === settings.secondaryColor ? '2px solid #000' : '1px solid #ccc',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              padding: '0'
+                            }}
+                            title={color.name}
+                          />
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
 
@@ -3978,6 +4128,46 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                     placeholder="Y-axis label"
                   />
+                  {type === DiagramTypes.PPC && (
+                    <>
+                      <div>
+                        <label className="block text-sm text-black mb-1">Type of Opportunity Cost</label>
+                        <select
+                          value={opportunityCostType}
+                          onChange={(e) => setOpportunityCostType(e.target.value as 'constant' | 'increasing')}
+                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        >
+                          <option value="constant">Constant (default)</option>
+                          <option value="increasing">Increasing</option>
+                        </select>
+                      </div>
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-black mb-2">Potential Output Shift</label>
+                        <div className="space-y-2">
+                          <button
+                            onClick={() => setPpcShift(ppcShift === 'outward' ? 'none' : 'outward')}
+                            className={`w-full px-3 py-2 text-sm border rounded-md transition-colors ${
+                              ppcShift === 'outward'
+                                ? 'bg-blue-500 text-white border-blue-600'
+                                : 'bg-white text-black border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            Increase in Potential Output (Shift PPC Outward)
+                          </button>
+                          <button
+                            onClick={() => setPpcShift(ppcShift === 'inward' ? 'none' : 'inward')}
+                            className={`w-full px-3 py-2 text-sm border rounded-md transition-colors ${
+                              ppcShift === 'inward'
+                                ? 'bg-blue-500 text-white border-blue-600'
+                                : 'bg-white text-black border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            Decrease in Potential Output (Shift PPC Inward)
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
