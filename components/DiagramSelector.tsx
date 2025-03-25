@@ -29,8 +29,8 @@ const diagramOptions: DiagramOption[] = [
   {
     type: DiagramTypes.PPC,
     title: 'Production Possibilities Curve (PPC)',
-    description: 'Coming soon: Create production possibilities curves to show opportunity costs and economic growth.',
-    comingSoon: true
+    description: 'Create production possibilities curves to show opportunity costs and economic growth.',
+    comingSoon: false
   },
   {
     type: DiagramTypes.NEO_CLASSICAL_AD_AS,

@@ -6,11 +6,13 @@ import { useSearchParams } from 'next/navigation';
 import { DiagramType } from '../types/diagram';
 
 const EconomicDiagram = dynamic(() => import('../components/EconomicDiagram'), {
-  ssr: false
+  ssr: false,
+  loading: () => <div>Loading diagram...</div>
 });
 
 const DiagramSelector = dynamic(() => import('../components/DiagramSelector'), {
-  ssr: false
+  ssr: false,
+  loading: () => <div>Loading selector...</div>
 });
 
 // Separate client component for token handling
@@ -39,7 +41,12 @@ interface DiagramOption {
 }
 
 export default function Home() {
+  const [mounted, setMounted] = useState(false);
   const [selectedDiagram, setSelectedDiagram] = useState<DiagramOption | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleDiagramSelect = (type: DiagramOption['type'], title: string) => {
     setSelectedDiagram({ type, title });
@@ -49,8 +56,12 @@ export default function Home() {
     setSelectedDiagram(null);
   };
 
+  if (!mounted) {
+    return null;
+  }
+
   return (
-    <>
+    <div className="min-h-screen">
       <Suspense fallback={null}>
         <TokenHandler />
       </Suspense>
@@ -89,6 +100,6 @@ export default function Home() {
           </div>
         </main>
       )}
-    </>
+    </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState, forwardRef, useRef, useImperativeHandle } from 'react';
 import { DiagramSettings, DiagramType, DiagramTypes } from '../types/diagram';
-import { Stage, Layer, Line, Text, Circle, Rect } from 'react-konva';
+import { Stage, Layer, Line, Text, Circle, Rect, Shape } from 'react-konva';
 import Konva from 'konva';
 import CanvasControls from './CanvasControls';
 import Image from 'next/image';
@@ -161,7 +161,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
       switch (elasticity) {
         case 'unitary':
           angle = -45;
-          lineLength = 100;
+          lineLength = 80;
           break;
         case 'relatively-elastic':
           angle = -20;
@@ -350,20 +350,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
 
   const renderSupplyDemand = (isDownload = false) => {
     // Only render supply-demand diagram if type matches
-    if (type !== 'supply-demand') {
-      return (
-        <Layer>
-          <Text
-            text="This diagram type is not yet implemented"
-            x={canvasWidth / 2}
-            y={canvasHeight / 2}
-            fontSize={16}
-            fill="#666"
-            align="center"
-            width={canvasWidth}
-          />
-        </Layer>
-      );
+    if (type !== DiagramTypes.SUPPLY_DEMAND) {
+      return null;
     }
 
     // Clip the lines at the boundaries
@@ -2476,12 +2464,79 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
     );
   };
 
+  const renderPPC = (isDownload = false) => {
+    return (
+      <Layer>
+        {/* Background */}
+        <Rect
+          x={0}
+          y={0}
+          width={canvasWidth}
+          height={canvasHeight}
+          fill="white"
+        />
+
+        {/* Axes */}
+        <Line
+          points={[160, 80, 160, canvasHeight - 70]}
+          stroke="#000000"
+          strokeWidth={settings.lineThickness}
+        />
+        <Line
+          points={[160, canvasHeight - 70, canvasWidth - 10, canvasHeight - 70]}
+          stroke="#000000"
+          strokeWidth={settings.lineThickness}
+        />
+
+        {/* PPC Line - straight line */}
+        <Line
+          points={[160, 80, canvasWidth - 10, canvasHeight - 70]}
+          stroke={settings.primaryColor}
+          strokeWidth={settings.lineThickness}
+        />
+
+        {/* Axis Labels */}
+        <Text
+          text={settings.yAxisLabel || 'Good A'}
+          x={60}
+          y={65}
+          fontSize={settings.fontSize}
+          fill="#000000"
+          width={90}
+          align="center"
+          wrap="word"
+        />
+        <Text
+          text={settings.xAxisLabel || 'Good B'}
+          x={canvasWidth - 100}
+          y={canvasHeight - 55}
+          fontSize={settings.fontSize}
+          fill="#000000"
+          width={200}
+          align="center"
+          wrap="word"
+        />
+
+        {/* Origin Label */}
+        <Text
+          text="0"
+          x={150}
+          y={canvasHeight - 60}
+          fontSize={settings.fontSize}
+          fill="#000000"
+        />
+      </Layer>
+    );
+  };
+
   const renderDiagram = (isDownload = false) => {
     switch (type) {
       case DiagramTypes.SUPPLY_DEMAND:
         return renderSupplyDemand(isDownload);
       case DiagramTypes.EXTERNALITIES:
         return renderExternalities(isDownload);
+      case DiagramTypes.PPC:
+        return renderPPC(isDownload);
       default:
         return (
           <Layer>
@@ -3927,7 +3982,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               </div>
 
               {/* Line Labels */}
-              {type === 'supply-demand' && (
+              {type === DiagramTypes.SUPPLY_DEMAND && (
                 <>
                   <div className="space-y-4">
                     <h4 className="text-sm font-medium text-black">Line Labels</h4>
@@ -3991,180 +4046,59 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               </div>
 
               {/* Elasticity Controls */}
-              <div className="space-y-4">
-                <h4 className="text-sm font-medium text-black">Elasticity</h4>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm text-black mb-1">Supply Elasticity</label>
-                    <select
-                      value={settings.supplyElasticity}
-                      onChange={(e) => onUpdateSettings({ ...settings, supplyElasticity: e.target.value as ElasticityType })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-                    >
-                      <option value="unitary">Unitary</option>
-                      <option value="relatively-elastic">Relatively Elastic</option>
-                      <option value="relatively-inelastic">Relatively Inelastic</option>
-                      <option value="perfectly-elastic">Perfectly Elastic</option>
-                      <option value="perfectly-inelastic">Perfectly Inelastic</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm text-black mb-1">Demand Elasticity</label>
-                    <select
-                      value={settings.demandElasticity}
-                      onChange={(e) => onUpdateSettings({ ...settings, demandElasticity: e.target.value as ElasticityType })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-                    >
-                      <option value="unitary">Unitary</option>
-                      <option value="relatively-elastic">Relatively Elastic</option>
-                      <option value="relatively-inelastic">Relatively Inelastic</option>
-                      <option value="perfectly-elastic">Perfectly Elastic</option>
-                      <option value="perfectly-inelastic">Perfectly Inelastic</option>
-                    </select>
+              {(type === DiagramTypes.SUPPLY_DEMAND || type === DiagramTypes.EXTERNALITIES) && (
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium text-black">Elasticity</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm text-black mb-1">Supply Elasticity</label>
+                      <select
+                        value={settings.supplyElasticity}
+                        onChange={(e) => onUpdateSettings({ ...settings, supplyElasticity: e.target.value as ElasticityType })}
+                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      >
+                        <option value="unitary">Unitary Elastic</option>
+                        <option value="relatively-elastic">Relatively Elastic</option>
+                        <option value="relatively-inelastic">Relatively Inelastic</option>
+                        <option value="perfectly-elastic">Perfectly Elastic</option>
+                        <option value="perfectly-inelastic">Perfectly Inelastic</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-black mb-1">Demand Elasticity</label>
+                      <select
+                        value={settings.demandElasticity}
+                        onChange={(e) => onUpdateSettings({ ...settings, demandElasticity: e.target.value as ElasticityType })}
+                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      >
+                        <option value="unitary">Unitary Elastic</option>
+                        <option value="relatively-elastic">Relatively Elastic</option>
+                        <option value="relatively-inelastic">Relatively Inelastic</option>
+                        <option value="perfectly-elastic">Perfectly Elastic</option>
+                        <option value="perfectly-inelastic">Perfectly Inelastic</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
+              )}
 
-                {/* Download Diagram Button */}
-                <div className="mt-4">
-                  <button
-                    onClick={() => setShowFormatDialog(true)}
-                    className="w-full px-4 py-2 text-white rounded-md transition-colors flex items-center justify-center gap-2"
-                    style={{
-                      backgroundColor: '#40b36e',
-                      fontSize: '14px',
-                      fontWeight: 500
-                    }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                    Download Diagram
-                  </button>
-                </div>
+              {/* Download Diagram Button */}
+              <div className="mt-4">
+                <button
+                  onClick={() => setShowFormatDialog(true)}
+                  className="w-full px-4 py-2 text-white rounded-md transition-colors flex items-center justify-center gap-2"
+                  style={{
+                    backgroundColor: '#40b36e',
+                    fontSize: '14px',
+                    fontWeight: 500
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                  Download Diagram
+                </button>
               </div>
-
-              {/* Format Dialog */}
-              {showFormatDialog && (
-                <div className="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center z-50">
-                  <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-lg">
-                    <div className="flex justify-between items-start mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">Choose Format</h3>
-                      <button
-                        onClick={() => setShowFormatDialog(false)}
-                        className="text-gray-400 hover:text-gray-500"
-                      >
-                        <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
-                      </button>
-                    </div>
-                    <div className="space-y-3">
-                      <button
-                        onClick={() => handleDownload('png')}
-                        className="w-full py-3 px-4 bg-[#40b36e] text-white text-center font-medium rounded-md hover:bg-[#379e61] transition-colors"
-                      >
-                        Download as PNG
-                      </button>
-                      <button
-                        onClick={() => handleDownload('jpg')}
-                        className="w-full py-3 px-4 bg-[#40b36e] text-white text-center font-medium rounded-md hover:bg-[#379e61] transition-colors"
-                      >
-                        Download as JPG
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Payment Dialog */}
-              {showPaymentDialog && (
-                <div className="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center z-50">
-                  <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 shadow-lg">
-                    <div className="flex justify-between items-start mb-4">
-                      <h3 className="text-xl font-semibold text-gray-900">Choose Your Plan</h3>
-                      <button
-                        onClick={() => setShowPaymentDialog(false)}
-                        className="text-gray-400 hover:text-gray-500"
-                      >
-                        <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
-                      </button>
-                    </div>
-                    
-                    <div className="space-y-6">
-                      {/* EconGraph Pro */}
-                      <div className="space-y-4">
-                        <h4 className="text-lg font-medium text-gray-900">EconGraph Pro</h4>
-                        <ul className="space-y-2 text-gray-600">
-                          <li>• Full access to EconGraph Pro diagrams</li>
-                          <li>• 15 downloads per day</li>
-                          <li>• High-quality watermark-free downloads</li>
-                        </ul>
-                        <button
-                          onClick={handleEconGraphProSubscription}
-                          className="w-full py-3 px-4 bg-[#40b36e] text-white text-center font-medium rounded-md hover:bg-[#379e61] transition-colors"
-                        >
-                          Join for $7.99/month
-                        </button>
-                      </div>
-
-                      {/* Student Membership */}
-                      <div className="space-y-4">
-                        <h4 className="text-lg font-medium text-gray-900">Student Membership</h4>
-                        <ul className="space-y-2 text-gray-600">
-                          <li>• EconGraph Pro Membership</li>
-                          <li>• Access to our Step-By-Step IA Guide</li>
-                          <li>• IB Econ Power Review Pack included</li>
-                        </ul>
-                        <button
-                          onClick={handleStudentSubscription}
-                          className="w-full py-3 px-4 bg-[#40b36e] text-white text-center font-medium rounded-md hover:bg-[#379e61] transition-colors"
-                        >
-                          Join for $12.99/month
-                        </button>
-                      </div>
-
-                      {/* Payment Method Logos */}
-                      <div className="flex items-center justify-center gap-6 pt-4">
-                        <div className="relative h-7 w-[150px]">
-                          <Image
-                            src="/Powered by Stripe - blurple-300x68-b3bf095.png"
-                            alt="Powered by Stripe"
-                            fill
-                            style={{ objectFit: 'contain' }}
-                          />
-                        </div>
-                        <div className="relative h-8 w-[150px]">
-                          <Image
-                            src="https://www.paypalobjects.com/webstatic/de_DE/i/de-pp-logo-150px.png"
-                            alt="PayPal"
-                            fill
-                            style={{ objectFit: 'contain' }}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Sign In Link */}
-                      <div className="flex items-center justify-center">
-                        <a 
-                          href="#" 
-                          onClick={(e) => {
-                            e.preventDefault();
-                            window.location.href = "https://diplomacollective.com/home/for-students/econgraph-pro";
-                          }}
-                          className="text-blue-500 hover:text-blue-600 flex items-center gap-2 text-sm"
-                        >
-                          Already a member? Sign in here to download now
-                          <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                          </svg>
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>

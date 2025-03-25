@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { DiagramSettings, defaultSettings, DiagramType, DiagramTypes } from '../types/diagram';
+import { DiagramSettings, DiagramType, DiagramTypes } from '../types/diagram';
 
 const DiagramCanvas = dynamic(() => import('./DiagramCanvas'), {
   ssr: false
@@ -13,10 +13,15 @@ export interface EconomicDiagramProps {
   title: string;
 }
 
-const EconomicDiagram = ({ type, title }: EconomicDiagramProps) => {
+export const EconomicDiagram = ({ type, title }: EconomicDiagramProps) => {
   const [settings, setSettings] = useState<DiagramSettings>({
-    ...defaultSettings,
-    title: title
+    title: title,
+    xAxisLabel: type === DiagramTypes.PPC ? 'Good B' : 'Quantity',
+    yAxisLabel: type === DiagramTypes.PPC ? 'Good A' : 'Price',
+    fontSize: 16,
+    lineThickness: 2,
+    primaryColor: '#0066cc',
+    secondaryColor: '#cc0000'
   });
   const [showS2, setShowS2] = useState(false);
   const [showS3, setShowS3] = useState(false);

@@ -1,13 +1,13 @@
 import { ElasticityType } from './elasticity';
 
-export const DiagramTypes = {
-  SUPPLY_DEMAND: 'supply-demand',
-  NEO_CLASSICAL_AD_AS: 'neo-classical-ad-as',
-  KEYNESIAN_AD_AS: 'keynesian-ad-as',
-  EXTERNALITIES: 'externalities',
-  INTERNATIONAL_TRADE: 'international-trade',
-  PPC: 'ppc',
-} as const;
+export enum DiagramTypes {
+  SUPPLY_DEMAND = 'SUPPLY_DEMAND',
+  NEO_CLASSICAL_AD_AS = 'NEO_CLASSICAL_AD_AS',
+  KEYNESIAN_AD_AS = 'KEYNESIAN_AD_AS',
+  EXTERNALITIES = 'EXTERNALITIES',
+  INTERNATIONAL_TRADE = 'INTERNATIONAL_TRADE',
+  PPC = 'PPC'
+}
 
 export type DiagramType = typeof DiagramTypes[keyof typeof DiagramTypes];
 
@@ -19,8 +19,8 @@ export interface DiagramSettings {
   lineThickness: number;
   primaryColor: string;
   secondaryColor: string;
-  supplyElasticity: ElasticityType;
-  demandElasticity: ElasticityType;
+  supplyElasticity?: ElasticityType;
+  demandElasticity?: ElasticityType;
 }
 
 export const defaultSettings: DiagramSettings = {
