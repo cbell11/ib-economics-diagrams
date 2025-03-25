@@ -4380,9 +4380,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                   fontSize: '0.875rem'
                 }}>
                   <li>All EconGraph Pro features</li>
-                  <li>Full access to study notes</li>
-                  <li>Practice questions and solutions</li>
-                  <li>Video explanations</li>
+                  <li>Step-By-Step Econ IA Guide</li>
+                  <li>Power Review Pack Access</li>
                 </ul>
               </div>
 
