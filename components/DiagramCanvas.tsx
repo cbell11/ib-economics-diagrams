@@ -84,6 +84,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   const ppcXPosition = 150;
   const ppcYPosition = 350;
   const [ppcShift, setPpcShift] = useState<'none' | 'outward' | 'inward'>('none');
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
 
   interface ColorOption {
     color: string;
@@ -2683,8 +2684,22 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   }
 
   const handleDownload = async (format: 'png' | 'jpg') => {
+    console.log("Starting download process...");
+    
     if (typeof window === 'undefined') {
       console.log("Running on server side - cannot process download");
+      return;
+    }
+
+    const referrer = document.referrer;
+    console.log("Current referrer:", referrer);
+    
+    const isValid = isValidReferrer(referrer);
+    console.log("Referrer validation result:", { isValid, referrer });
+
+    if (!isValid) {
+      console.log("Invalid referrer, showing payment dialog");
+      setShowPaymentDialog(true);
       return;
     }
 
@@ -2755,7 +2770,16 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
       console.log(`Download completed in ${format} format`);
     } catch (error) {
       console.error("Download failed:", error);
+      setShowPaymentDialog(true);
     }
+  };
+
+  const handleEconGraphProSubscription = () => {
+    window.location.href = 'https://diplomacollective.com/register/econ-student-econgraph-pro/';
+  };
+
+  const handleStudentSubscription = () => {
+    window.location.href = 'https://diplomacollective.com/register/econ-student-monthly/';
   };
 
   if (!mounted) {
@@ -4233,6 +4257,94 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                   Download Diagram
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Dialog */}
+      {showPaymentDialog && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '2rem',
+            borderRadius: '8px',
+            maxWidth: '500px',
+            width: '90%'
+          }}>
+            <h2 style={{
+              fontSize: '1.5rem',
+              fontWeight: 'bold',
+              marginBottom: '1rem',
+              color: '#1f2937'
+            }}>
+              Choose Your Subscription
+            </h2>
+            <p style={{
+              marginBottom: '1.5rem',
+              color: '#4b5563'
+            }}>
+              To download diagrams without watermarks, please choose a subscription:
+            </p>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem'
+            }}>
+              <button
+                onClick={handleEconGraphProSubscription}
+                style={{
+                  padding: '0.75rem 1rem',
+                  backgroundColor: '#4895ef',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: '500'
+                }}
+              >
+                EconGraph Pro Subscription
+              </button>
+              <button
+                onClick={handleStudentSubscription}
+                style={{
+                  padding: '0.75rem 1rem',
+                  backgroundColor: '#ffffff',
+                  color: '#1f2937',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: '500'
+                }}
+              >
+                Student Membership
+              </button>
+              <button
+                onClick={() => setShowPaymentDialog(false)}
+                style={{
+                  padding: '0.5rem',
+                  backgroundColor: 'transparent',
+                  color: '#6b7280',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem'
+                }}
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>
