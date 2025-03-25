@@ -66,9 +66,6 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [supplyLabel, setSupplyLabel] = useState("S");
   const [demandLabel, setDemandLabel] = useState("D");
-  const [supply1Label, setSupply1Label] = useState("S₁");
-  const [supply2Label, setSupply2Label] = useState("S₂");
-  const [supply3Label, setSupply3Label] = useState("S₃");
   const [showPositiveConsumptionExternality, setShowPositiveConsumptionExternality] = useState(false);
   const [mpbDistance, setMpbDistance] = useState(70);
   const [showNegativeConsumptionExternality, setShowNegativeConsumptionExternality] = useState(false);
@@ -1078,8 +1075,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
       }
       
       if (y1 < minY) {
-        const dx = (minY - y2) / slope;
-        clippedX1 = x2 - dx;
+        clippedX1 = x2 - (y2 - minY) / slope;
         clippedY1 = minY;
       }
 
