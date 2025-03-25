@@ -21,21 +21,33 @@ const diagramOptions: DiagramOption[] = [
     comingSoon: false
   },
   {
-    type: DiagramTypes.NEO_CLASSICAL_AD_AS,
-    title: 'Neo-Classical AD-AS',
-    description: 'Create aggregate demand and supply diagrams with a vertical long-run aggregate supply curve.',
-    comingSoon: true
-  },
-  {
     type: DiagramTypes.EXTERNALITIES,
     title: 'Externalities',
     description: 'Illustrate positive and negative externalities with social and private cost/benefit curves.',
     comingSoon: false
   },
   {
+    type: DiagramTypes.PPC,
+    title: 'Production Possibilities Curve (PPC)',
+    description: 'Coming soon: Create production possibilities curves to show opportunity costs and economic growth.',
+    comingSoon: true
+  },
+  {
+    type: DiagramTypes.NEO_CLASSICAL_AD_AS,
+    title: 'Neo-Classical AD/AS',
+    description: 'Illustrate aggregate demand and supply with various economic scenarios.',
+    comingSoon: true
+  },
+  {
+    type: DiagramTypes.KEYNESIAN_AD_AS,
+    title: 'Keynesian AD/AS',
+    description: 'Coming soon: Create Keynesian aggregate demand and supply diagrams with horizontal AS curve in the short run.',
+    comingSoon: true
+  },
+  {
     type: DiagramTypes.INTERNATIONAL_TRADE,
     title: 'International Trade',
-    description: 'Visualize comparative advantage, terms of trade, and gains from trade between countries.',
+    description: 'Create diagrams showing trade patterns, tariffs, and quotas.',
     comingSoon: true
   }
 ];
