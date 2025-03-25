@@ -2,10 +2,9 @@
 
 import { useState, forwardRef, useRef, useImperativeHandle } from 'react';
 import { DiagramSettings, DiagramType, DiagramTypes } from '../types/diagram';
-import { Stage, Layer, Line, Text, Circle, Rect, Shape, Arrow } from 'react-konva';
+import { Stage, Layer, Line, Text, Circle, Rect, Arrow } from 'react-konva';
 import Konva from 'konva';
 import CanvasControls from './CanvasControls';
-import Image from 'next/image';
 
 type ElasticityType = 'unitary' | 'relatively-elastic' | 'relatively-inelastic' | 'perfectly-elastic' | 'perfectly-inelastic';
 
