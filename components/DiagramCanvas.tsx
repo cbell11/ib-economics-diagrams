@@ -2683,21 +2683,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   }
 
   const handleDownload = async (format: 'png' | 'jpg') => {
-    console.log("Starting download process...");
-    
     if (typeof window === 'undefined') {
       console.log("Running on server side - cannot process download");
-      return;
-    }
-
-    const referrer = document.referrer;
-    console.log("Current referrer:", referrer);
-    
-    const isValid = isValidReferrer(referrer);
-    console.log("Referrer validation result:", { isValid, referrer });
-
-    if (!isValid) {
-      console.log("Invalid referrer, showing payment dialog");
       return;
     }
 
@@ -2769,14 +2756,6 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
     } catch (error) {
       console.error("Download failed:", error);
     }
-  };
-
-  const handleEconGraphProSubscription = () => {
-    window.location.href = 'https://diplomacollective.com/register/econ-student-econgraph-pro/';
-  };
-
-  const handleStudentSubscription = () => {
-    window.location.href = 'https://diplomacollective.com/register/econ-student-monthly/';
   };
 
   if (!mounted) {
