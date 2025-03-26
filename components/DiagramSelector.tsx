@@ -36,7 +36,7 @@ const diagramOptions: DiagramOption[] = [
     type: DiagramTypes.NEO_CLASSICAL_AD_AS,
     title: 'Neo-Classical AD/AS',
     description: 'Illustrate aggregate demand and supply with various economic scenarios.',
-    comingSoon: true
+    comingSoon: false
   },
   {
     type: DiagramTypes.KEYNESIAN_AD_AS,

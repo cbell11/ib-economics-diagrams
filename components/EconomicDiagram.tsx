@@ -16,8 +16,10 @@ export interface EconomicDiagramProps {
 export const EconomicDiagram = ({ type, title }: EconomicDiagramProps) => {
   const [settings, setSettings] = useState<DiagramSettings>({
     title: title,
-    xAxisLabel: type === DiagramTypes.PPC ? 'Good B' : 'Quantity',
-    yAxisLabel: type === DiagramTypes.PPC ? 'Good A' : 'Price',
+    xAxisLabel: type === DiagramTypes.PPC ? 'Good B' : 
+               type === DiagramTypes.NEO_CLASSICAL_AD_AS ? 'Real GDP' : 'Quantity',
+    yAxisLabel: type === DiagramTypes.PPC ? 'Good A' : 
+               type === DiagramTypes.NEO_CLASSICAL_AD_AS ? 'Price Level' : 'Price',
     fontSize: 16,
     lineThickness: 2,
     primaryColor: '#0066cc',
@@ -36,7 +38,8 @@ export const EconomicDiagram = ({ type, title }: EconomicDiagramProps) => {
   // Show "Coming Soon" for unimplemented diagrams
   if (type !== DiagramTypes.SUPPLY_DEMAND && 
       type !== DiagramTypes.EXTERNALITIES && 
-      type !== DiagramTypes.PPC) {
+      type !== DiagramTypes.PPC &&
+      type !== DiagramTypes.NEO_CLASSICAL_AD_AS) {
     return (
       <div className="w-full h-96 flex items-center justify-center">
         <p className="text-xl text-gray-600">Coming Soon</p>

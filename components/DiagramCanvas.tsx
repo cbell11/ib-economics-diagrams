@@ -85,6 +85,16 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   const ppcYPosition = 350;
   const [ppcShift, setPpcShift] = useState<'none' | 'outward' | 'inward'>('none');
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [showLRAS, setShowLRAS] = useState(true);
+  const [showSRAS, setShowSRAS] = useState(true);
+  const [showAD, setShowAD] = useState(true);
+  const [showAD2, setShowAD2] = useState(false);
+  const [showAD3, setShowAD3] = useState(false);
+  const [showSRAS2, setShowSRAS2] = useState(false);
+  const [showSRAS3, setShowSRAS3] = useState(false);
+  const [adShift, setAdShift] = useState(0);
+  const [srasShift, setSrasShift] = useState(0);
+  const [lrasShift, setLrasShift] = useState(0);
 
   interface ColorOption {
     color: string;
@@ -2677,6 +2687,593 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
     );
   };
 
+  const renderNeoClassicalADAS = (isDownload = false) => {
+    const clipLine = (points: number[]) => {
+      const [x1, y1, x2, y2] = points;
+      const maxY = canvasHeight - 70; // x-axis boundary
+      const minY = 80; // y-axis top boundary
+      const minX = 160; // y-axis left boundary
+      const maxX = canvasWidth - 40; // right boundary
+      
+      const slope = (y2 - y1) / (x2 - x1);
+      let clippedX1 = x1;
+      let clippedY1 = y1;
+      let clippedX2 = x2;
+      let clippedY2 = y2;
+      
+      // Apply clipping logic
+      if (y2 > maxY) {
+        clippedX2 = x1 + (maxY - y1) / slope;
+        clippedY2 = maxY;
+      }
+      
+      if (y1 > maxY) {
+        clippedX1 = x2 - (y2 - maxY) / slope;
+        clippedY1 = maxY;
+      }
+
+      if (y2 < minY) {
+        clippedX2 = x1 + (minY - y1) / slope;
+        clippedY2 = minY;
+      }
+      
+      if (y1 < minY) {
+        clippedX1 = x2 - (y2 - minY) / slope;
+        clippedY1 = minY;
+      }
+
+      if (clippedX1 < minX) {
+        clippedX1 = minX;
+        clippedY1 = y1 + slope * (minX - x1);
+      }
+      if (clippedX2 < minX) {
+        clippedX2 = minX;
+        clippedY2 = y2 + slope * (minX - x2);
+      }
+
+      if (clippedX1 > maxX) {
+        clippedX1 = maxX;
+        clippedY1 = y1 + slope * (maxX - x1);
+      }
+      if (clippedX2 > maxX) {
+        clippedX2 = maxX;
+        clippedY2 = y2 + slope * (maxX - x2);
+      }
+      
+      return [clippedX1, clippedY1, clippedX2, clippedY2];
+    };
+
+    // Calculate intersection point of AD and SRAS
+    const calculateIntersection = () => {
+      // AD line points
+      const adX1 = 250;
+      const adY1 = 150 + adShift;
+      const adX2 = 550;
+      const adY2 = 450 + adShift;
+      
+      // SRAS line points
+      const srasX1 = 250;
+      const srasY1 = 450 + srasShift;
+      const srasX2 = 550;
+      const srasY2 = 150 + srasShift;
+
+      // Calculate slopes
+      const adSlope = (adY2 - adY1) / (adX2 - adX1);
+      const srasSlope = (srasY2 - srasY1) / (srasX2 - srasX1);
+
+      // Calculate y-intercepts
+      const adIntercept = adY1 - adSlope * adX1;
+      const srasIntercept = srasY1 - srasSlope * srasX1;
+
+      // Calculate intersection point
+      const x = (srasIntercept - adIntercept) / (adSlope - srasSlope);
+      const y = adSlope * x + adIntercept;
+
+      return { x, y };
+    };
+
+    // Calculate points for LRAS (vertical line)
+    const lrasPoints = [
+      400 + lrasShift, 80,  // Top point
+      400 + lrasShift, canvasHeight - 70  // Bottom point
+    ];
+
+    // Calculate points for SRAS (upward sloping)
+    const srasPoints = [
+      250, 450 + srasShift,  // Left point
+      550, 150 + srasShift   // Right point
+    ];
+
+    // Calculate points for AD (downward sloping)
+    const adPoints = [
+      250, 150 + adShift,  // Left point
+      550, 450 + adShift   // Right point
+    ];
+
+    // Calculate intersection point
+    const intersection = calculateIntersection();
+
+    // Calculate shifted points for AD2 and AD3
+    const ad2Points = showAD2 ? [
+      250, 150 + adShift + 100,  // Left point
+      550, 450 + adShift + 100   // Right point
+    ] : null;
+
+    const ad3Points = showAD3 ? [
+      250, 150 + adShift - 100,  // Left point
+      550, 450 + adShift - 100   // Right point
+    ] : null;
+
+    // Calculate shifted points for SRAS2 and SRAS3
+    const sras2Points = showSRAS2 ? [
+      250, 450 + srasShift + 100,  // Left point
+      550, 150 + srasShift + 100   // Right point
+    ] : null;
+
+    const sras3Points = showSRAS3 ? [
+      250, 450 + srasShift - 100,  // Left point
+      550, 150 + srasShift - 100   // Right point
+    ] : null;
+
+    // Calculate intersection points for shifted curves
+    const calculateShiftedIntersection = (points1: number[], points2: number[]) => {
+      const [x1, y1, x2, y2] = points1;
+      const [x3, y3, x4, y4] = points2;
+      
+      const slope1 = (y2 - y1) / (x2 - x1);
+      const slope2 = (y4 - y3) / (x4 - x3);
+      
+      const intercept1 = y1 - slope1 * x1;
+      const intercept2 = y3 - slope2 * x3;
+      
+      const x = (intercept2 - intercept1) / (slope1 - slope2);
+      const y = slope1 * x + intercept1;
+      
+      return { x, y };
+    };
+
+    // Calculate intersection points for each shifted curve
+    const ad2Intersection = showAD2 && ad2Points ? calculateShiftedIntersection(ad2Points, srasPoints) : null;
+    const ad3Intersection = showAD3 && ad3Points ? calculateShiftedIntersection(ad3Points, srasPoints) : null;
+    const sras2Intersection = showSRAS2 && sras2Points ? calculateShiftedIntersection(sras2Points, adPoints) : null;
+    const sras3Intersection = showSRAS3 && sras3Points ? calculateShiftedIntersection(sras3Points, adPoints) : null;
+
+    return (
+      <Layer>
+        {/* Draw axes */}
+        <Line
+          points={[160, 80, 160, canvasHeight - 70]}
+          stroke="#000000"
+          strokeWidth={settings.lineThickness}
+        />
+        <Line
+          points={[160, canvasHeight - 70, canvasWidth - 40, canvasHeight - 70]}
+          stroke="#000000"
+          strokeWidth={settings.lineThickness}
+        />
+
+        {/* Draw LRAS */}
+        {showLRAS && (
+          <>
+            <Line
+              points={clipLine(lrasPoints)}
+              stroke="#000000"
+              strokeWidth={settings.lineThickness}
+              strokeDash={[5, 5]}
+            />
+            <Text
+              text="LRAS"
+              x={lrasPoints[0] + 10}
+              y={lrasPoints[1] - 20}
+              fontSize={settings.fontSize}
+              fill="#000000"
+            />
+          </>
+        )}
+
+        {/* Draw SRAS */}
+        {showSRAS && (
+          <>
+            <Line
+              points={clipLine(srasPoints)}
+              stroke={settings.primaryColor}
+              strokeWidth={settings.lineThickness}
+            />
+            <Text
+              text="SRAS"
+              x={srasPoints[2] + 10}
+              y={srasPoints[3] - 20}
+              fontSize={settings.fontSize}
+              fill={settings.primaryColor}
+            />
+          </>
+        )}
+
+        {/* Draw AD */}
+        {showAD && (
+          <>
+            <Line
+              points={clipLine(adPoints)}
+              stroke={settings.secondaryColor}
+              strokeWidth={settings.lineThickness}
+            />
+            <Text
+              text="AD"
+              x={adPoints[2] + 10}
+              y={adPoints[3] - 20}
+              fontSize={settings.fontSize}
+              fill={settings.secondaryColor}
+            />
+          </>
+        )}
+
+        {/* Draw AD2 with intersection */}
+        {showAD2 && ad2Points && ad2Intersection && (
+          <>
+            <Line
+              points={clipLine(ad2Points)}
+              stroke={settings.secondaryColor}
+              strokeWidth={settings.lineThickness}
+              strokeDash={[5, 5]}
+            />
+            <Text
+              text="AD₂"
+              x={ad2Points[2] - 20}
+              y={ad2Points[3] - 50}
+              fontSize={settings.fontSize}
+              fill={settings.secondaryColor}
+            />
+            <Line
+              points={[
+                ad2Intersection.x,
+                ad2Intersection.y,
+                160,
+                ad2Intersection.y
+              ]}
+              stroke="#000000"
+              strokeWidth={settings.lineThickness}
+              dash={[5, 5]}
+              lineCap="round"
+              lineJoin="round"
+            />
+            <Line
+              points={[
+                ad2Intersection.x,
+                ad2Intersection.y,
+                ad2Intersection.x,
+                canvasHeight - 70
+              ]}
+              stroke="#000000"
+              strokeWidth={settings.lineThickness}
+              dash={[5, 5]}
+              lineCap="round"
+              lineJoin="round"
+            />
+            <Circle
+              x={ad2Intersection.x}
+              y={ad2Intersection.y}
+              radius={4}
+              fill="#000000"
+              stroke="#000000"
+              strokeWidth={settings.lineThickness}
+            />
+            <Text
+              text="APL₂"
+              x={120}
+              y={ad2Intersection.y - 10}
+              fontSize={settings.fontSize}
+              fill="#000000"
+            />
+            {Math.abs(ad2Intersection.x - (400 + lrasShift)) > 20 && (
+              <Text
+                text="Y₂"
+                x={ad2Intersection.x - 5}
+                y={canvasHeight - 60}
+                fontSize={settings.fontSize}
+                fill="#000000"
+              />
+            )}
+          </>
+        )}
+
+        {/* Draw AD3 with intersection */}
+        {showAD3 && ad3Points && ad3Intersection && (
+          <>
+            <Line
+              points={clipLine(ad3Points)}
+              stroke={settings.secondaryColor}
+              strokeWidth={settings.lineThickness}
+              strokeDash={[5, 5]}
+            />
+            <Text
+              text="AD₃"
+              x={ad3Points[2] + 10}
+              y={ad3Points[3] - 20}
+              fontSize={settings.fontSize}
+              fill={settings.secondaryColor}
+            />
+            <Line
+              points={[
+                ad3Intersection.x,
+                ad3Intersection.y,
+                160,
+                ad3Intersection.y
+              ]}
+              stroke="#000000"
+              strokeWidth={settings.lineThickness}
+              dash={[5, 5]}
+              lineCap="round"
+              lineJoin="round"
+            />
+            <Line
+              points={[
+                ad3Intersection.x,
+                ad3Intersection.y,
+                ad3Intersection.x,
+                canvasHeight - 70
+              ]}
+              stroke="#000000"
+              strokeWidth={settings.lineThickness}
+              dash={[5, 5]}
+              lineCap="round"
+              lineJoin="round"
+            />
+            <Circle
+              x={ad3Intersection.x}
+              y={ad3Intersection.y}
+              radius={4}
+              fill="#000000"
+              stroke="#000000"
+              strokeWidth={settings.lineThickness}
+            />
+            <Text
+              text="APL₃"
+              x={120}
+              y={ad3Intersection.y - 10}
+              fontSize={settings.fontSize}
+              fill="#000000"
+            />
+            {Math.abs(ad3Intersection.x - (400 + lrasShift)) > 20 && (
+              <Text
+                text="Y₃"
+                x={ad3Intersection.x - 5}
+                y={canvasHeight - 60}
+                fontSize={settings.fontSize}
+                fill="#000000"
+              />
+            )}
+          </>
+        )}
+
+        {/* Draw SRAS2 with intersection */}
+        {showSRAS2 && sras2Points && sras2Intersection && (
+          <>
+            <Line
+              points={clipLine(sras2Points)}
+              stroke={settings.primaryColor}
+              strokeWidth={settings.lineThickness}
+              strokeDash={[5, 5]}
+            />
+            <Text
+              text="SRAS₂"
+              x={sras2Points[2] + 10}
+              y={sras2Points[3] - 20}
+              fontSize={settings.fontSize}
+              fill={settings.primaryColor}
+            />
+            <Line
+              points={[
+                sras2Intersection.x,
+                sras2Intersection.y,
+                160,
+                sras2Intersection.y
+              ]}
+              stroke="#000000"
+              strokeWidth={settings.lineThickness}
+              dash={[5, 5]}
+              lineCap="round"
+              lineJoin="round"
+            />
+            <Line
+              points={[
+                sras2Intersection.x,
+                sras2Intersection.y,
+                sras2Intersection.x,
+                canvasHeight - 70
+              ]}
+              stroke="#000000"
+              strokeWidth={settings.lineThickness}
+              dash={[5, 5]}
+              lineCap="round"
+              lineJoin="round"
+            />
+            <Circle
+              x={sras2Intersection.x}
+              y={sras2Intersection.y}
+              radius={4}
+              fill="#000000"
+              stroke="#000000"
+              strokeWidth={settings.lineThickness}
+            />
+            <Text
+              text="APL₂"
+              x={120}
+              y={sras2Intersection.y - 10}
+              fontSize={settings.fontSize}
+              fill="#000000"
+            />
+            {Math.abs(sras2Intersection.x - (400 + lrasShift)) > 20 && (
+              <Text
+                text="Y₂"
+                x={sras2Intersection.x - 5}
+                y={canvasHeight - 60}
+                fontSize={settings.fontSize}
+                fill="#000000"
+              />
+            )}
+          </>
+        )}
+
+        {/* Draw SRAS3 with intersection */}
+        {showSRAS3 && sras3Points && sras3Intersection && (
+          <>
+            <Line
+              points={clipLine(sras3Points)}
+              stroke={settings.primaryColor}
+              strokeWidth={settings.lineThickness}
+              strokeDash={[5, 5]}
+            />
+            <Text
+              text="SRAS₃"
+              x={sras3Points[2] -20}
+              y={sras3Points[3] - 0}
+              fontSize={settings.fontSize}
+              fill={settings.primaryColor}
+            />
+            <Line
+              points={[
+                sras3Intersection.x,
+                sras3Intersection.y,
+                160,
+                sras3Intersection.y
+              ]}
+              stroke="#000000"
+              strokeWidth={settings.lineThickness}
+              dash={[5, 5]}
+              lineCap="round"
+              lineJoin="round"
+            />
+            <Line
+              points={[
+                sras3Intersection.x,
+                sras3Intersection.y,
+                sras3Intersection.x,
+                canvasHeight - 70
+              ]}
+              stroke="#000000"
+              strokeWidth={settings.lineThickness}
+              dash={[5, 5]}
+              lineCap="round"
+              lineJoin="round"
+            />
+            <Circle
+              x={sras3Intersection.x}
+              y={sras3Intersection.y}
+              radius={4}
+              fill="#000000"
+              stroke="#000000"
+              strokeWidth={settings.lineThickness}
+            />
+            <Text
+              text="APL₃"
+              x={120}
+              y={sras3Intersection.y - 10}
+              fontSize={settings.fontSize}
+              fill="#000000"
+            />
+            {Math.abs(sras3Intersection.x - (400 + lrasShift)) > 20 && (
+              <Text
+                text="Y₃"
+                x={sras3Intersection.x - 5}
+                y={canvasHeight - 60}
+                fontSize={settings.fontSize}
+                fill="#000000"
+              />
+            )}
+          </>
+        )}
+
+        {/* Draw Equilibrium Point and Line */}
+        {showLRAS && showSRAS && showAD && (
+          <>
+            <Line
+              points={[
+                intersection.x,
+                intersection.y,
+                160,
+                intersection.y
+              ]}
+              stroke="#000000"
+              strokeWidth={settings.lineThickness}
+              dash={[5, 5]}
+              lineCap="round"
+              lineJoin="round"
+            />
+            <Circle
+              x={intersection.x}
+              y={intersection.y}
+              radius={4}
+              fill="#000000"
+              stroke="#000000"
+              strokeWidth={settings.lineThickness}
+            />
+            <Text
+              text="APL"
+              x={120}
+              y={intersection.y - 10}
+              fontSize={settings.fontSize}
+              fill="#000000"
+            />
+            {/* Only show dashed line and Y label if not too close to LRAS line */}
+            {Math.abs(intersection.x - (400 + lrasShift)) > 20 && (
+              <>
+                <Line
+                  points={[
+                    intersection.x,
+                    intersection.y,
+                    intersection.x,
+                    canvasHeight - 70
+                  ]}
+                  stroke="#000000"
+                  strokeWidth={settings.lineThickness}
+                  dash={[5, 5]}
+                  lineCap="round"
+                  lineJoin="round"
+                />
+                <Text
+                  text="Y"
+                  x={intersection.x - 5}
+                  y={canvasHeight - 60}
+                  fontSize={settings.fontSize}
+                  fill="#000000"
+                />
+              </>
+            )}
+            <Text
+              text="Yfe"
+              x={390 + lrasShift}
+              y={540}
+              fontSize={settings.fontSize}
+              fill="#000000"
+            />
+          </>
+        )}
+
+        {/* Draw axis labels */}
+        <Text
+          text={settings.yAxisLabel}
+          x={40}
+          y={80}
+          fontSize={settings.fontSize}
+          fill="#000000"
+          width={90}
+          align="center"
+          wrap="word"
+        />
+        <Text
+          text={settings.xAxisLabel}
+          x={canvasWidth - 140}
+          y={canvasHeight - 50}
+          fontSize={settings.fontSize}
+          width={100}
+          align="center"
+          wrap="word"
+          fill="#000000"
+        />
+      </Layer>
+    );
+  };
+
   const renderDiagram = () => {
     switch (type) {
       case DiagramTypes.SUPPLY_DEMAND:
@@ -2685,6 +3282,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
         return renderExternalities();
       case DiagramTypes.PPC:
         return renderPPC();
+      case DiagramTypes.NEO_CLASSICAL_AD_AS:
+        return renderNeoClassicalADAS();
       default:
         return null;
     }
@@ -4123,9 +4722,9 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                         <select
                           value={opportunityCostType}
                           onChange={(e) => setOpportunityCostType(e.target.value as 'constant' | 'increasing')}
-                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black"
                         >
-                          <option value="constant">Constant (default)</option>
+                          <option value="constant">Constant</option>
                           <option value="increasing">Increasing</option>
                         </select>
                       </div>
@@ -4233,7 +4832,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                       <select
                         value={settings.supplyElasticity}
                         onChange={(e) => onUpdateSettings({ ...settings, supplyElasticity: e.target.value as ElasticityType })}
-                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black"
                       >
                         <option value="unitary">Unitary Elastic</option>
                         <option value="relatively-elastic">Relatively Elastic</option>
@@ -4247,7 +4846,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                       <select
                         value={settings.demandElasticity}
                         onChange={(e) => onUpdateSettings({ ...settings, demandElasticity: e.target.value as ElasticityType })}
-                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black"
                       >
                         <option value="unitary">Unitary Elastic</option>
                         <option value="relatively-elastic">Relatively Elastic</option>
@@ -4256,6 +4855,142 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                         <option value="perfectly-inelastic">Perfectly Inelastic</option>
                       </select>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Neo-Classical AD/AS Controls */}
+              {type === DiagramTypes.NEO_CLASSICAL_AD_AS && (
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium text-black">Curve Controls</h4>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={showLRAS}
+                        onChange={(e) => setShowLRAS(e.target.checked)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <label className="text-sm text-black">Show LRAS</label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={showSRAS}
+                        onChange={(e) => setShowSRAS(e.target.checked)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <label className="text-sm text-black">Show SRAS</label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={showAD}
+                        onChange={(e) => setShowAD(e.target.checked)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <label className="text-sm text-black">Show AD</label>
+                    </div>
+                  </div>
+
+                  <h4 className="text-sm font-medium text-black">Shift Controls</h4>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={showAD2}
+                        onChange={(e) => {
+                          setShowAD2(e.target.checked);
+                          setShowAD3(false);
+                        }}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                
+                      <label className="text-sm text-black">Decrease AD (AD₂)</label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={showAD3}
+                        onChange={(e) => {
+                          setShowAD3(e.target.checked);
+                          setShowAD2(false);
+                        }}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <label className="text-sm text-black">Increase AD (AD₃)</label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={showSRAS2}
+                        onChange={(e) => {
+                          setShowSRAS2(e.target.checked);
+                          setShowSRAS3(false);
+                        }}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <label className="text-sm text-black">Increase SRAS (SRAS₂)</label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={showSRAS3}
+                        onChange={(e) => {
+                          setShowSRAS3(e.target.checked);
+                          setShowSRAS2(false);
+                        }}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <label className="text-sm text-black">Decrease SRAS (SRAS₃)</label>
+                    </div>
+                  </div>
+
+                  <h4 className="text-sm font-medium text-black">Position Controls</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm text-black mb-1">AD Position</label>
+                      <input
+                        type="range"
+                        min="-100"
+                        max="100"
+                        value={adShift}
+                        onChange={(e) => setAdShift(parseInt(e.target.value))}
+                        className="w-full"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-black mb-1">SRAS Position</label>
+                      <input
+                        type="range"
+                        min="-100"
+                        max="100"
+                        value={srasShift}
+                        onChange={(e) => setSrasShift(parseInt(e.target.value))}
+                        className="w-full"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-black mb-1">LRAS Position</label>
+                      <input
+                        type="range"
+                        min="-100"
+                        max="100"
+                        value={lrasShift}
+                        onChange={(e) => setLrasShift(parseInt(e.target.value))}
+                        className="w-full"
+                      />
+                    </div>
+                    <button
+                      onClick={() => {
+                        setAdShift(0);
+                        setSrasShift(0);
+                        setLrasShift(0);
+                      }}
+                      className="w-full px-3 py-2 text-sm border rounded-md transition-colors bg-white text-black border-gray-300 hover:bg-gray-50"
+                    >
+                      Reset To Default
+                    </button>
                   </div>
                 </div>
               )}
