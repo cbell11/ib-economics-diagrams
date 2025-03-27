@@ -19,7 +19,7 @@ export const EconomicDiagram = ({ type, title }: EconomicDiagramProps) => {
     xAxisLabel: type === DiagramTypes.PPC ? 'Good B' : 
                type === DiagramTypes.NEO_CLASSICAL_AD_AS ? 'Real GDP' : 'Quantity',
     yAxisLabel: type === DiagramTypes.PPC ? 'Good A' : 
-               type === DiagramTypes.NEO_CLASSICAL_AD_AS ? 'Price Level' : 'Price',
+               type === DiagramTypes.NEO_CLASSICAL_AD_AS ? 'Average Price Level ($)' : 'Price',
     fontSize: 16,
     lineThickness: 2,
     primaryColor: '#0066cc',

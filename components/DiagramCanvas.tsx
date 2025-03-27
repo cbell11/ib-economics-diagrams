@@ -2840,6 +2840,18 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
 
     return (
       <Layer>
+        {/* Add title */}
+        <Text
+          text="Neo-Classical AD/AS Model"
+          x={canvasWidth / 1.7}
+          y={20}
+          fontSize={settings.fontSize + 4}
+          fill="#000000"
+          align="center"
+          width={300}
+          offsetX={150}
+        />
+
         {/* Draw axes */}
         <Line
           points={[160, 80, 160, canvasHeight - 70]}
