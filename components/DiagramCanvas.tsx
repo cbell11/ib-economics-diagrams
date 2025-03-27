@@ -2840,11 +2840,40 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
 
     return (
       <Layer>
-        {/* Add title */}
+        {/* White Background */}
+        <Rect
+          x={0}
+          y={0}
+          width={canvasWidth + 200}
+          height={canvasHeight}
+          fill="white"
+        />
+
+        {/* Watermarks - only show in preview */}
+        {!isDownload && [0.25, 0.5, 0.75].map((position) => (
+          <Text
+            key={position}
+            text="Copyright Diploma Collective"
+            x={canvasWidth * position}
+            y={canvasHeight / 2}
+            fontSize={16}
+            fill="#4195FF"
+            opacity={0.2}
+            rotation={-45}
+            width={300}
+            align="center"
+            verticalAlign="middle"
+            offsetX={150}
+            offsetY={0}
+            name="watermark"
+          />
+        ))}
+
+        {/* Title */}
         <Text
           text="Neo-Classical AD/AS Model"
-          x={canvasWidth / 1.7}
-          y={20}
+          x={canvasWidth / 2}
+          y={30}
           fontSize={settings.fontSize + 4}
           fill="#000000"
           align="center"
