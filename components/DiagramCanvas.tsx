@@ -3706,46 +3706,58 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
       550, 450 + moneyDemandShift   // Right point
     ];
 
-    // Calculate equilibrium point
-    const equilibriumY = (() => {
-      const [mdX1, mdY1, mdX2, mdY2] = mdPoints;
-      const msX = msPoints[0];  // X coordinate of vertical Money Supply line
-      
-      // Calculate slope and y-intercept of Money Demand line
-      const mdSlope = (mdY2 - mdY1) / (mdX2 - mdX1);
-      const mdYIntercept = mdY1 - mdSlope * mdX1;
-      
-      // Calculate Y coordinate where Money Demand line intersects Money Supply line
-      return mdSlope * msX + mdYIntercept;
-    })();
-
-    const equilibriumPoint = {
-      x: msPoints[0],
-      y: equilibriumY
-    };
-
-    // Calculate points for increased Money Supply (50 units to the right)
+    // Calculate points for increased Money Supply (Ms₂) (50 units to the right)
     const increasedMsPoints = [
       msPoints[0] + 50, 80,  // Top point
       msPoints[0] + 50, canvasHeight - 70  // Bottom point
     ];
 
-    // Calculate equilibrium point for Ms₂ when it's shown
-    const equilibriumY2 = showIncreasedMs ? (() => {
-      const [mdX1, mdY1, mdX2, mdY2] = mdPoints;
-      const msX = increasedMsPoints[0];  // X coordinate of shifted Money Supply line
-      
-      // Calculate slope and y-intercept of Money Demand line
+    // Calculate points for decreased Money Supply (Ms₃) (50 units to the left)
+    const decreasedMsPoints = [
+      msPoints[0] - 50, 80,  // Top point
+      msPoints[0] - 50, canvasHeight - 70  // Bottom point
+    ];
+
+    // Calculate points for decreased Money Demand (Md₂)
+    const decreasedMdPoints = [
+      160, 250 + moneyDemandShift,  // Left point, shifted down
+      550, 550 + moneyDemandShift   // Right point, shifted down
+    ];
+
+    // Calculate equilibrium points
+    const calculateEquilibriumY = (supplyX: number, demandPoints: number[]) => {
+      const [mdX1, mdY1, mdX2, mdY2] = demandPoints;
       const mdSlope = (mdY2 - mdY1) / (mdX2 - mdX1);
       const mdYIntercept = mdY1 - mdSlope * mdX1;
-      
-      // Calculate Y coordinate where Money Demand line intersects shifted Money Supply line
-      return mdSlope * msX + mdYIntercept;
-    })() : undefined;
+      return mdSlope * supplyX + mdYIntercept;
+    };
 
-    const equilibriumPoint2 = showIncreasedMs && equilibriumY2 !== undefined ? {
+    // Original equilibrium point
+    const equilibriumY = calculateEquilibriumY(msPoints[0], mdPoints);
+    const equilibriumPoint = {
+      x: msPoints[0],
+      y: equilibriumY
+    };
+
+    // Ms₂ equilibrium point
+    const equilibriumY2 = showMs2 ? calculateEquilibriumY(increasedMsPoints[0], mdPoints) : undefined;
+    const equilibriumPoint2 = showMs2 && equilibriumY2 !== undefined ? {
       x: increasedMsPoints[0],
       y: equilibriumY2
+    } : undefined;
+
+    // Ms₃ equilibrium point
+    const equilibriumY3 = showDecreasedMs ? calculateEquilibriumY(decreasedMsPoints[0], mdPoints) : undefined;
+    const equilibriumPoint3 = showDecreasedMs && equilibriumY3 !== undefined ? {
+      x: decreasedMsPoints[0],
+      y: equilibriumY3
+    } : undefined;
+
+    // Md₂ equilibrium points
+    const equilibriumYMd2 = showMd2 ? calculateEquilibriumY(msPoints[0], decreasedMdPoints) : undefined;
+    const equilibriumPointMd2 = showMd2 && equilibriumYMd2 !== undefined ? {
+      x: msPoints[0],
+      y: equilibriumYMd2
     } : undefined;
 
     return (
@@ -3816,34 +3828,6 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
           fill={settings.primaryColor}
         />
 
-        {/* Draw increased Money Supply */}
-        {showIncreasedMs && (
-          <>
-            <Line
-              points={clipLine(increasedMsPoints)}
-              stroke={settings.primaryColor}
-              strokeWidth={settings.lineThickness}
-              strokeDash={[5, 5]}
-            />
-            <Text
-              text="Ms₂"
-              x={increasedMsPoints[0] + 10}
-              y={increasedMsPoints[1] - 20}
-              fontSize={settings.fontSize}
-              fill={settings.primaryColor}
-            />
-            {/* Arrow showing increase */}
-            <Arrow
-              points={[msPoints[0] + 10, msPoints[1] + 50, increasedMsPoints[0] - 5, increasedMsPoints[1] + 50]}
-              pointerLength={10}
-              pointerWidth={10}
-              fill={"#000000"}
-              stroke={"#000000"}
-              strokeWidth={settings.lineThickness}
-            />
-          </>
-        )}
-
         {/* Draw Money Demand */}
         <Line
           points={clipLine(mdPoints)}
@@ -3858,23 +3842,105 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
           fill={settings.secondaryColor}
         />
 
-        {/* Draw equilibrium point and dashed lines */}
+        {/* Draw increased Money Supply (Ms₂) */}
+        {showMs2 && (
+          <>
+            <Line
+              points={clipLine(increasedMsPoints)}
+              stroke={settings.primaryColor}
+              strokeWidth={settings.lineThickness}
+              dash={[5, 5]}
+            />
+            <Text
+              text="Ms₂"
+              x={increasedMsPoints[0] + 10}
+              y={increasedMsPoints[1] - 20}
+              fontSize={settings.fontSize}
+              fill={settings.primaryColor}
+            />
+            {/* Arrow showing increase */}
+            <Arrow
+              points={[msPoints[0] + 10, msPoints[1] + 50, increasedMsPoints[0] - 5, increasedMsPoints[1] + 50]}
+              pointerLength={10}
+              pointerWidth={10}
+              fill={settings.primaryColor}
+              stroke={settings.primaryColor}
+              strokeWidth={settings.lineThickness}
+            />
+          </>
+        )}
+
+        {/* Draw decreased Money Supply (Ms₃) */}
+        {showDecreasedMs && (
+          <>
+            <Line
+              points={clipLine(decreasedMsPoints)}
+              stroke={settings.primaryColor}
+              strokeWidth={settings.lineThickness}
+              dash={[5, 5]}
+            />
+            <Text
+              text="Ms₃"
+              x={decreasedMsPoints[0] + 10}
+              y={decreasedMsPoints[1] - 20}
+              fontSize={settings.fontSize}
+              fill={settings.primaryColor}
+            />
+            {/* Arrow showing decrease */}
+            <Arrow
+              points={[msPoints[0] - 10, msPoints[1] + 50, decreasedMsPoints[0] + 5, decreasedMsPoints[1] + 50]}
+              pointerLength={10}
+              pointerWidth={10}
+              fill={settings.primaryColor}
+              stroke={settings.primaryColor}
+              strokeWidth={settings.lineThickness}
+            />
+          </>
+        )}
+
+        {/* Draw decreased Money Demand (Md₂) */}
+        {showMd2 && (
+          <>
+            <Line
+              points={clipLine(decreasedMdPoints)}
+              stroke={settings.secondaryColor}
+              strokeWidth={settings.lineThickness}
+              dash={[5, 5]}
+            />
+            <Text
+              text="Md₂"
+              x={decreasedMdPoints[2] + 10}
+              y={decreasedMdPoints[3] - 20}
+              fontSize={settings.fontSize}
+              fill={settings.secondaryColor}
+            />
+            {/* Arrow showing decrease */}
+            <Arrow
+              points={[mdPoints[2] - 50, mdPoints[3] - 10, decreasedMdPoints[2] - 50, decreasedMdPoints[3] - 10]}
+              pointerLength={10}
+              pointerWidth={10}
+              fill={settings.secondaryColor}
+              stroke={settings.secondaryColor}
+              strokeWidth={settings.lineThickness}
+            />
+          </>
+        )}
+
+        {/* Draw equilibrium points and dashed lines */}
         <>
-          {/* Vertical dashed line to x-axis */}
+          {/* Original equilibrium */}
           <Line
             points={[equilibriumPoint.x, equilibriumPoint.y, equilibriumPoint.x, canvasHeight - 70]}
             stroke="#666666"
             strokeWidth={1}
             dash={[4, 4]}
           />
-          {/* Horizontal dashed line to y-axis */}
           <Line
             points={[160, equilibriumPoint.y, equilibriumPoint.x, equilibriumPoint.y]}
             stroke="#666666"
             strokeWidth={1}
             dash={[4, 4]}
           />
-          {/* Equilibrium point circle */}
           <Circle
             x={equilibriumPoint.x}
             y={equilibriumPoint.y}
@@ -3883,7 +3949,6 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
             stroke="#000000"
             strokeWidth={1}
           />
-          {/* Label for first equilibrium point */}
           <Text
             text="IR₁"
             x={125}
@@ -3900,24 +3965,21 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
           />
         </>
 
-        {/* Draw equilibrium point and dashed lines for Ms₂ intersection */}
-        {showIncreasedMs && equilibriumPoint2 && (
+        {/* Ms₂ equilibrium */}
+        {showMs2 && equilibriumPoint2 && (
           <>
-            {/* Vertical dashed line to x-axis */}
             <Line
               points={[equilibriumPoint2.x, equilibriumPoint2.y, equilibriumPoint2.x, canvasHeight - 70]}
               stroke="#666666"
               strokeWidth={1}
               dash={[4, 4]}
             />
-            {/* Horizontal dashed line to y-axis */}
             <Line
               points={[160, equilibriumPoint2.y, equilibriumPoint2.x, equilibriumPoint2.y]}
               stroke="#666666"
               strokeWidth={1}
               dash={[4, 4]}
             />
-            {/* Equilibrium point circle */}
             <Circle
               x={equilibriumPoint2.x}
               y={equilibriumPoint2.y}
@@ -3926,7 +3988,6 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               stroke="#000000"
               strokeWidth={1}
             />
-            {/* Label for second equilibrium point */}
             <Text
               text="IR₂"
               x={125}
@@ -3944,21 +4005,101 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
           </>
         )}
 
-        {/* Axis labels */}
+        {/* Ms₃ equilibrium */}
+        {showDecreasedMs && equilibriumPoint3 && (
+          <>
+            <Line
+              points={[equilibriumPoint3.x, equilibriumPoint3.y, equilibriumPoint3.x, canvasHeight - 70]}
+              stroke="#666666"
+              strokeWidth={1}
+              dash={[4, 4]}
+            />
+            <Line
+              points={[160, equilibriumPoint3.y, equilibriumPoint3.x, equilibriumPoint3.y]}
+              stroke="#666666"
+              strokeWidth={1}
+              dash={[4, 4]}
+            />
+            <Circle
+              x={equilibriumPoint3.x}
+              y={equilibriumPoint3.y}
+              radius={6}
+              fill="#000000"
+              stroke="#000000"
+              strokeWidth={1}
+            />
             <Text
+              text="IR₃"
+              x={125}
+              y={equilibriumPoint3.y - 8}
+              fontSize={settings.fontSize}
+              fill="#000000"
+            />
+            <Text
+              text="Q₃"
+              x={equilibriumPoint3.x - 8}
+              y={canvasHeight - 55}
+              fontSize={settings.fontSize}
+              fill="#000000"
+            />
+          </>
+        )}
+
+        {/* Md₂ equilibrium */}
+        {showMd2 && equilibriumPointMd2 && (
+          <>
+            <Line
+              points={[equilibriumPointMd2.x, equilibriumPointMd2.y, equilibriumPointMd2.x, canvasHeight - 70]}
+              stroke="#666666"
+              strokeWidth={1}
+              dash={[4, 4]}
+            />
+            <Line
+              points={[160, equilibriumPointMd2.y, equilibriumPointMd2.x, equilibriumPointMd2.y]}
+              stroke="#666666"
+              strokeWidth={1}
+              dash={[4, 4]}
+            />
+            <Circle
+              x={equilibriumPointMd2.x}
+              y={equilibriumPointMd2.y}
+              radius={6}
+              fill="#000000"
+              stroke="#000000"
+              strokeWidth={1}
+            />
+            <Text
+              text="IR₄"
+              x={125}
+              y={equilibriumPointMd2.y - 8}
+              fontSize={settings.fontSize}
+              fill="#000000"
+            />
+            <Text
+              text="Q₄"
+              x={equilibriumPointMd2.x - 8}
+              y={canvasHeight - 55}
+              fontSize={settings.fontSize}
+              fill="#000000"
+            />
+          </>
+        )}
+
+        {/* Axis labels */}
+        <Text
           text="Interest Rate (%)"
           x={80}
           y={canvasHeight / 2}
-              fontSize={settings.fontSize}
-              fill="#000000"
+          fontSize={settings.fontSize}
+          fill="#000000"
           rotation={-90}
-            />
-            <Text
+        />
+        <Text
           text="Quantity of Money"
           x={canvasWidth - 150}
           y={canvasHeight - 40}
-              fontSize={settings.fontSize}
-              fill="#000000"
+          fontSize={settings.fontSize}
+          fill="#000000"
           width={150}
           align="center"
           wrap="word"
@@ -5515,16 +5656,65 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                     />
                   </div>
                   {type === DiagramTypes.MONEY_MARKET && (
-                    <div className="mt-2">
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          className="checkbox"
-                          checked={showIncreasedMs}
-                          onChange={() => setShowIncreasedMs(!showIncreasedMs)}
-                        />
-                        <span className="text-sm text-black">Increase Ms</span>
-                      </label>
+                    <div className="mt-2 space-y-4">
+                      <h4 className="text-sm font-medium text-black">Shift Controls</h4>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm text-black mb-1">Money Supply Shift</label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="range"
+                              min="-100"
+                              max="100"
+                              value={moneySupplyShift}
+                              onChange={(e) => setMoneySupplyShift(parseInt(e.target.value))}
+                              className="w-full"
+                            />
+                            <span className="text-sm text-gray-600 min-w-[30px]">{moneySupplyShift}</span>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm text-black mb-1">Money Demand Shift</label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="range"
+                              min="-100"
+                              max="100"
+                              value={moneyDemandShift}
+                              onChange={(e) => setMoneyDemandShift(parseInt(e.target.value))}
+                              className="w-full"
+                            />
+                            <span className="text-sm text-gray-600 min-w-[30px]">{moneyDemandShift}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            className="checkbox"
+                            checked={showMs2}
+                            onChange={() => setShowMs2(!showMs2)}
+                          />
+                          <span className="text-sm text-black">Increase Money Supply (Ms₂)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            className="checkbox"
+                            checked={showMd2}
+                            onChange={() => setShowMd2(!showMd2)}
+                          />
+                          <span className="text-sm text-black">Decrease Money Demand (Md₂)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            className="checkbox"
+                            checked={showDecreasedMs}
+                            onChange={() => setShowDecreasedMs(!showDecreasedMs)}
+                          />
+                          <span className="text-sm text-black">Decrease Money Supply (Ms₃)</span>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
