@@ -2,7 +2,7 @@
 
 import { useState, forwardRef, useRef, useImperativeHandle } from 'react';
 import { DiagramSettings, DiagramType, DiagramTypes } from '../types/diagram';
-import { Stage, Layer, Line, Text, Circle, Rect, Arrow, Path } from 'react-konva';
+import { Stage, Layer, Line, Text, Circle, Rect, Arrow } from 'react-konva';
 import Konva from 'konva';
 import CanvasControls from './CanvasControls';
 
@@ -5356,7 +5356,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                       <input
                         type="checkbox"
                         checked={adasView === 'keynesian' ? false : showLRAS1}
-                        onChange={(e) => {
+                        onChange={() => {
                           setShowLRAS1(!showLRAS1);
                         }}
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
