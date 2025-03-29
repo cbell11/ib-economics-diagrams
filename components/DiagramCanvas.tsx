@@ -98,6 +98,12 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   const [lrasShift, setLrasShift] = useState(0);
   const [adasView, setAdasView] = useState<'neo-classical' | 'keynesian'>('neo-classical');
   const [showAS, setShowAS] = useState(true);
+  const [moneySupplyShift, setMoneySupplyShift] = useState(0);
+  const [moneyDemandShift, setMoneyDemandShift] = useState(0);
+  const [showMs2, setShowMs2] = useState(false);
+  const [showMd2, setShowMd2] = useState(false);
+  const [showIncreasedMs, setShowIncreasedMs] = useState(false);
+  const [showDecreasedMs, setShowDecreasedMs] = useState(false);
 
   interface ColorOption {
     color: string;
@@ -474,7 +480,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
           fill="white"
         />
 
-        {/* Watermarks - only show in preview */}
+        {/* Watermarks */}
         {!isDownload && [0.25, 0.5, 0.75].map((position) => (
           <Text
             key={position}
@@ -493,7 +499,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
             name="watermark"
           />
         ))}
-        
+
         {/* Title */}
         <Text
           text={settings.title || ""}
@@ -1644,7 +1650,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
           fill="white"
         />
 
-        {/* Watermarks - only show in preview */}
+        {/* Watermarks */}
         {!isDownload && [0.25, 0.5, 0.75].map((position) => (
           <Text
             key={position}
@@ -1663,7 +1669,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
             name="watermark"
           />
         ))}
-        
+
         {/* Title */}
         <Text
           text={settings.title || ""}
@@ -2482,7 +2488,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
           fill="white"
         />
         
-        {/* Watermarks - only show in preview */}
+        {/* Watermarks */}
         {[0.25, 0.5, 0.75].map((position) => (
           <Text
             key={position}
@@ -2946,7 +2952,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
           fill="white"
         />
 
-        {/* Watermarks - only show in preview */}
+        {/* Watermarks */}
         {!isDownload && [0.25, 0.5, 0.75].map((position) => (
           <Text
             key={position}
@@ -3652,6 +3658,315 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
     );
   };
 
+  const renderMoneyMarket = (isDownload = false) => {
+    const clipLine = (points: number[]) => {
+      const [x1, y1, x2, y2] = points;
+      const minY = 80;  // Top boundary
+      const maxY = canvasHeight - 70;  // Bottom boundary (x-axis)
+      const minX = 160;  // Left boundary
+      const maxX = canvasWidth - 90;  // Right boundary
+
+      // Calculate slope
+      const slope = (y2 - y1) / (x2 - x1);
+      let clippedX1 = x1;
+      let clippedY1 = y1;
+      let clippedX2 = x2;
+      let clippedY2 = y2;
+
+      // Clip to boundaries
+      if (x1 < minX) {
+        clippedX1 = minX;
+        clippedY1 = y1 + slope * (minX - x1);
+      }
+      if (x2 > maxX) {
+        clippedX2 = maxX;
+        clippedY2 = y2 + slope * (maxX - x2);
+      }
+      if (y1 < minY) {
+        clippedY1 = minY;
+        clippedX1 = x1 + (minY - y1) / slope;
+      }
+      if (y2 > maxY) {
+        clippedY2 = maxY;
+        clippedX2 = x2 + (maxY - y2) / slope;
+      }
+
+      return [clippedX1, clippedY1, clippedX2, clippedY2];
+    };
+
+    // Calculate points for Money Supply (vertical line)
+    const msPoints = [
+      400 + moneySupplyShift, 80,  // Top point
+      400 + moneySupplyShift, canvasHeight - 70  // Bottom point
+    ];
+
+    // Calculate points for Money Demand (downward sloping)
+    const mdPoints = [
+      160, 150 + moneyDemandShift,  // Left point
+      550, 450 + moneyDemandShift   // Right point
+    ];
+
+    // Calculate equilibrium point
+    const equilibriumY = (() => {
+      const [mdX1, mdY1, mdX2, mdY2] = mdPoints;
+      const msX = msPoints[0];  // X coordinate of vertical Money Supply line
+      
+      // Calculate slope and y-intercept of Money Demand line
+      const mdSlope = (mdY2 - mdY1) / (mdX2 - mdX1);
+      const mdYIntercept = mdY1 - mdSlope * mdX1;
+      
+      // Calculate Y coordinate where Money Demand line intersects Money Supply line
+      return mdSlope * msX + mdYIntercept;
+    })();
+
+    const equilibriumPoint = {
+      x: msPoints[0],
+      y: equilibriumY
+    };
+
+    // Calculate points for increased Money Supply (50 units to the right)
+    const increasedMsPoints = [
+      msPoints[0] + 50, 80,  // Top point
+      msPoints[0] + 50, canvasHeight - 70  // Bottom point
+    ];
+
+    // Calculate equilibrium point for Ms₂ when it's shown
+    const equilibriumY2 = showIncreasedMs ? (() => {
+      const [mdX1, mdY1, mdX2, mdY2] = mdPoints;
+      const msX = increasedMsPoints[0];  // X coordinate of shifted Money Supply line
+      
+      // Calculate slope and y-intercept of Money Demand line
+      const mdSlope = (mdY2 - mdY1) / (mdX2 - mdX1);
+      const mdYIntercept = mdY1 - mdSlope * mdX1;
+      
+      // Calculate Y coordinate where Money Demand line intersects shifted Money Supply line
+      return mdSlope * msX + mdYIntercept;
+    })() : undefined;
+
+    const equilibriumPoint2 = showIncreasedMs && equilibriumY2 !== undefined ? {
+      x: increasedMsPoints[0],
+      y: equilibriumY2
+    } : undefined;
+
+    return (
+      <Layer>
+        {/* White Background */}
+        <Rect
+          x={0}
+          y={0}
+          width={canvasWidth}
+          height={canvasHeight}
+          fill="white"
+        />
+
+        {/* Watermarks */}
+        {!isDownload && [0.25, 0.5, 0.75].map((position) => (
+          <Text
+            key={position}
+            text="Copyright Diploma Collective"
+            x={canvasWidth * position}
+            y={canvasHeight / 2}
+            fontSize={16}
+            fill="#4195FF"
+            opacity={0.2}
+            rotation={-45}
+            width={300}
+            align="center"
+            verticalAlign="middle"
+            offsetX={150}
+            offsetY={0}
+            name="watermark"
+          />
+        ))}
+
+        {/* Title */}
+        <Text
+          text="Money Market"
+          x={70}
+          y={20}
+          width={canvasWidth}
+          fontSize={settings.fontSize * 1.2}
+          fill="#000000"
+          align="center"
+        />
+
+        {/* Draw axes */}
+        <Line
+          points={[160, 80, 160, canvasHeight - 70]}
+          stroke="#000000"
+          strokeWidth={settings.lineThickness}
+        />
+        <Line
+          points={[160, canvasHeight - 70, canvasWidth - 40, canvasHeight - 70]}
+          stroke="#000000"
+          strokeWidth={settings.lineThickness}
+        />
+
+        {/* Draw Money Supply */}
+        <Line
+          points={clipLine(msPoints)}
+          stroke={settings.primaryColor}
+          strokeWidth={settings.lineThickness}
+        />
+        <Text
+          text="Ms"
+          x={msPoints[0] + 10}
+          y={msPoints[1] - 20}
+          fontSize={settings.fontSize}
+          fill={settings.primaryColor}
+        />
+
+        {/* Draw increased Money Supply */}
+        {showIncreasedMs && (
+          <>
+            <Line
+              points={clipLine(increasedMsPoints)}
+              stroke={settings.primaryColor}
+              strokeWidth={settings.lineThickness}
+              strokeDash={[5, 5]}
+            />
+            <Text
+              text="Ms₂"
+              x={increasedMsPoints[0] + 10}
+              y={increasedMsPoints[1] - 20}
+              fontSize={settings.fontSize}
+              fill={settings.primaryColor}
+            />
+            {/* Arrow showing increase */}
+            <Arrow
+              points={[msPoints[0] + 10, msPoints[1] + 50, increasedMsPoints[0] - 5, increasedMsPoints[1] + 50]}
+              pointerLength={10}
+              pointerWidth={10}
+              fill={"#000000"}
+              stroke={"#000000"}
+              strokeWidth={settings.lineThickness}
+            />
+          </>
+        )}
+
+        {/* Draw Money Demand */}
+        <Line
+          points={clipLine(mdPoints)}
+          stroke={settings.secondaryColor}
+          strokeWidth={settings.lineThickness}
+        />
+        <Text
+          text="Md"
+          x={mdPoints[2] + 10}
+          y={mdPoints[3] - 20}
+          fontSize={settings.fontSize}
+          fill={settings.secondaryColor}
+        />
+
+        {/* Draw equilibrium point and dashed lines */}
+        <>
+          {/* Vertical dashed line to x-axis */}
+          <Line
+            points={[equilibriumPoint.x, equilibriumPoint.y, equilibriumPoint.x, canvasHeight - 70]}
+            stroke="#666666"
+            strokeWidth={1}
+            dash={[4, 4]}
+          />
+          {/* Horizontal dashed line to y-axis */}
+          <Line
+            points={[160, equilibriumPoint.y, equilibriumPoint.x, equilibriumPoint.y]}
+            stroke="#666666"
+            strokeWidth={1}
+            dash={[4, 4]}
+          />
+          {/* Equilibrium point circle */}
+          <Circle
+            x={equilibriumPoint.x}
+            y={equilibriumPoint.y}
+            radius={6}
+            fill="#000000"
+            stroke="#000000"
+            strokeWidth={1}
+          />
+          {/* Label for first equilibrium point */}
+          <Text
+            text="IR₁"
+            x={125}
+            y={equilibriumPoint.y - 8}
+            fontSize={settings.fontSize}
+            fill="#000000"
+          />
+          <Text
+            text="Q₁"
+            x={equilibriumPoint.x - 8}
+            y={canvasHeight - 55}
+            fontSize={settings.fontSize}
+            fill="#000000"
+          />
+        </>
+
+        {/* Draw equilibrium point and dashed lines for Ms₂ intersection */}
+        {showIncreasedMs && equilibriumPoint2 && (
+          <>
+            {/* Vertical dashed line to x-axis */}
+            <Line
+              points={[equilibriumPoint2.x, equilibriumPoint2.y, equilibriumPoint2.x, canvasHeight - 70]}
+              stroke="#666666"
+              strokeWidth={1}
+              dash={[4, 4]}
+            />
+            {/* Horizontal dashed line to y-axis */}
+            <Line
+              points={[160, equilibriumPoint2.y, equilibriumPoint2.x, equilibriumPoint2.y]}
+              stroke="#666666"
+              strokeWidth={1}
+              dash={[4, 4]}
+            />
+            {/* Equilibrium point circle */}
+            <Circle
+              x={equilibriumPoint2.x}
+              y={equilibriumPoint2.y}
+              radius={6}
+              fill="#000000"
+              stroke="#000000"
+              strokeWidth={1}
+            />
+            {/* Label for second equilibrium point */}
+            <Text
+              text="IR₂"
+              x={125}
+              y={equilibriumPoint2.y - 8}
+              fontSize={settings.fontSize}
+              fill="#000000"
+            />
+            <Text
+              text="Q₂"
+              x={equilibriumPoint2.x - 8}
+              y={canvasHeight - 55}
+              fontSize={settings.fontSize}
+              fill="#000000"
+            />
+          </>
+        )}
+
+        {/* Axis labels */}
+            <Text
+          text="Interest Rate (%)"
+          x={80}
+          y={canvasHeight / 2}
+              fontSize={settings.fontSize}
+              fill="#000000"
+          rotation={-90}
+            />
+            <Text
+          text="Quantity of Money"
+          x={canvasWidth - 150}
+          y={canvasHeight - 40}
+              fontSize={settings.fontSize}
+              fill="#000000"
+          width={150}
+          align="center"
+          wrap="word"
+        />
+      </Layer>
+    );
+  };
+
   const renderDiagram = () => {
     switch (type) {
       case DiagramTypes.SUPPLY_DEMAND:
@@ -3662,6 +3977,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
         return renderPPC();
       case DiagramTypes.NEO_CLASSICAL_AD_AS:
         return renderNeoClassicalADAS();
+      case DiagramTypes.MONEY_MARKET:
+        return renderMoneyMarket();
       default:
         return null;
     }
@@ -4407,8 +4724,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                     </div>
                   </div>
                 </div>
-              </>
-            )}
+          </>
+        )}
 
             {/* Interventions Section - Only show for supply and demand diagram */}
             {type === DiagramTypes.SUPPLY_DEMAND && (
@@ -5197,6 +5514,19 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                       className="w-full"
                     />
                   </div>
+                  {type === DiagramTypes.MONEY_MARKET && (
+                    <div className="mt-2">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          className="checkbox"
+                          checked={showIncreasedMs}
+                          onChange={() => setShowIncreasedMs(!showIncreasedMs)}
+                        />
+                        <span className="text-sm text-black">Increase Ms</span>
+                      </label>
+                    </div>
+                  )}
                 </div>
               </div>
 
