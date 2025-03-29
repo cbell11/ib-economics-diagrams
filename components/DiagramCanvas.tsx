@@ -2,7 +2,7 @@
 
 import { useState, forwardRef, useRef, useImperativeHandle } from 'react';
 import { DiagramSettings, DiagramType, DiagramTypes } from '../types/diagram';
-import { Stage, Layer, Line, Text, Circle, Rect, Arrow } from 'react-konva';
+import { Stage, Layer, Line, Text, Circle, Rect, Arrow, Path } from 'react-konva';
 import Konva from 'konva';
 import CanvasControls from './CanvasControls';
 
@@ -92,6 +92,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   const [showAD3, setShowAD3] = useState(false);
   const [showSRAS2, setShowSRAS2] = useState(false);
   const [showSRAS3, setShowSRAS3] = useState(false);
+  const [showLRAS1, setShowLRAS1] = useState(false);
   const [adShift, setAdShift] = useState(0);
   const [srasShift, setSrasShift] = useState(0);
   const [lrasShift, setLrasShift] = useState(0);
@@ -3000,11 +3001,89 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
             />
             <Text
               text="LRAS"
-              x={lrasPoints[0] + 10}
+              x={lrasPoints[0] - 20}
               y={lrasPoints[1] - 20}
               fontSize={settings.fontSize}
               fill="#000000"
             />
+          </>
+        )}
+
+        {/* Draw LRAS₁ */}
+        {showLRAS1 && (
+          <>
+            {adasView === 'neo-classical' ? (
+              <>
+                <Line
+                  points={clipLine([lrasPoints[0] + 50, lrasPoints[1], lrasPoints[2] + 50, lrasPoints[3]])}
+                  stroke="#000000"
+                  strokeWidth={settings.lineThickness}
+                  strokeDash={[5, 5]}
+                />
+                <Text
+                  text="LRAS₁"
+                  x={lrasPoints[0] + 40}
+                  y={lrasPoints[1] - 20}
+                  fontSize={settings.fontSize}
+                  fill="#000000"
+                />
+                {/* Arrow from LRAS to LRAS₁ */}
+                <Arrow
+                  points={[lrasPoints[0] + 10, lrasPoints[1] + 50, lrasPoints[0] + 40, lrasPoints[1] + 50]}
+                  pointerLength={10}
+                  pointerWidth={10}
+                  fill="#000000"
+                  stroke="#000000"
+                  strokeWidth={settings.lineThickness}
+                />
+              </>
+            ) : (
+              <>
+                {/* Horizontal section (perfectly elastic) */}
+                <Line
+                  points={clipLine([
+                    160, 300 + srasShift,  // Left point (start from y-axis)
+                    500, 300 + srasShift   // Right point (horizontal line)
+                  ])}
+                  stroke={settings.primaryColor}
+                  strokeWidth={settings.lineThickness}
+                />
+                {/* Upward sloping section */}
+                <Line
+                  points={clipLine([
+                    500, 300 + srasShift,  // Left point
+                    550, 250 + srasShift   // Right point (upward sloping)
+                  ])}
+                  stroke={settings.primaryColor}
+                  strokeWidth={settings.lineThickness}
+                />
+                {/* Vertical section (perfectly inelastic) */}
+                <Line
+                  points={clipLine([
+                    550, 250 + srasShift,  // Bottom point
+                    550, 140                // Top point (vertical line)
+                  ])}
+                  stroke={settings.primaryColor}
+                  strokeWidth={settings.lineThickness}
+                />
+                <Text
+                  text="AS₁"
+                  x={570 + srasShift}
+                  y={110 + srasShift}
+                  fontSize={settings.fontSize}
+                  fill={settings.primaryColor}
+                />
+                {/* Arrow from AS to AS₁ */}
+                <Arrow
+                  points={[475, 150 + srasShift, 525, 150 + srasShift]}
+                  pointerLength={10}
+                  pointerWidth={10}
+                  fill="#000000"
+                  stroke="#000000"
+                  strokeWidth={settings.lineThickness}
+                />
+              </>
+            )}
           </>
         )}
 
@@ -3141,6 +3220,15 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               fontSize={settings.fontSize}
               fill="#000000"
             />
+            {/* Arrow from AD to AD₂ */}
+                <Arrow
+                  points={[adPoints[0] + 275, adPoints[1] + 300, adPoints[0] + 225, adPoints[1] + 300]}
+                  pointerLength={10}
+                  pointerWidth={10}
+                  fill="#000000"
+                  stroke="#000000"
+                  strokeWidth={settings.lineThickness}
+                />
             {/* Only show Y2 label if not too close to Yfe */}
             {Math.abs(ad2Intersection.x - (adasView === 'keynesian' ? 450 : (400 + lrasShift))) > 20 && (
               <Text
@@ -3211,6 +3299,15 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               fontSize={settings.fontSize}
               fill="#000000"
             />
+             {/* Arrow from AD to AD₃ */}
+                <Arrow
+                  points={[adPoints[0] + 75, adPoints[1] + 50, adPoints[0] + 125, adPoints[1] + 50]}
+                  pointerLength={10}
+                  pointerWidth={10}
+                  fill="#000000"
+                  stroke="#000000"
+                  strokeWidth={settings.lineThickness}
+                />
             {/* Only show Y3 label if not too close to Yfe */}
             {Math.abs(ad3Intersection.x - (adasView === 'keynesian' ? 450 : (400 + lrasShift))) > 20 && (
               <Text
@@ -3239,6 +3336,15 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               y={sras2Points[3] - 20}
               fontSize={settings.fontSize}
               fill={settings.primaryColor}
+            />
+            {/* Arrow from SRAS to SRAS₂ */}
+            <Arrow
+              points={[srasPoints[2] - 100, srasPoints[3] + 120, sras2Points[2] - 40, sras2Points[3] + 20]}
+              pointerLength={10}
+              pointerWidth={10}
+              fill={"#000000"}
+              stroke={"#000000"}
+              strokeWidth={settings.lineThickness}
             />
             <Line
               points={[
@@ -3281,6 +3387,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               fontSize={settings.fontSize}
               fill="#000000"
             />
+             
             {Math.abs(sras2Intersection.x - (400 + lrasShift)) > 20 && (
               <Text
                 text="Y₂"
@@ -3290,6 +3397,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                 fill="#000000"
               />
             )}
+            
           </>
         )}
 
@@ -3309,6 +3417,16 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               fontSize={settings.fontSize}
               fill={settings.primaryColor}
             />
+            {/* Arrow from SRAS to SRAS₃ */}
+            <Arrow
+              points={[srasPoints[2] - 30, srasPoints[3] + 20, sras3Points[2] - 90, sras3Points[3] + 120]}
+              pointerLength={10}
+              pointerWidth={10}
+              fill={"#000000"}
+              stroke={"#000000"}
+              strokeWidth={settings.lineThickness}
+            />
+  
             <Line
               points={[
                 sras3Intersection.x,
@@ -5233,6 +5351,19 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                         className={`rounded border-gray-300 text-blue-600 focus:ring-blue-500 ${adasView === 'keynesian' ? 'opacity-50 cursor-not-allowed' : ''}`}
                       />
                       <label className={`text-sm ${adasView === 'keynesian' ? 'text-gray-400' : 'text-black'}`}>Decrease SRAS (SRAS₃)</label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={adasView === 'keynesian' ? false : showLRAS1}
+                        onChange={(e) => {
+                          setShowLRAS1(!showLRAS1);
+                        }}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <label className="text-sm text-black">
+                        {adasView === 'keynesian' ? 'Increase AS (AS₁)' : 'Increase LRAS (LRAS₁)'}
+                      </label>
                     </div>
                   </div>
 
