@@ -759,6 +759,21 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
             strokeWidth={settings.lineThickness}
           />
         )}
+        {/* Supply line */}
+        <Line
+          points={supplyPoints}
+          stroke={settings.primaryColor}
+          strokeWidth={2}
+          lineCap="round"
+          lineJoin="round"
+        />
+        <Text
+          text={supplyLabel}
+          x={supplyPoints[2] + 20}
+          y={Math.min(supplyPoints[1], supplyPoints[3]) - 20}
+          fontSize={settings.fontSize}
+          fill={settings.primaryColor}
+        />
 
         {/* Original equilibrium point and dotted lines */}
         <Line
@@ -996,21 +1011,6 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
           fill={settings.secondaryColor}
         />
 
-        {/* Supply line */}
-        <Line
-          points={supplyPoints}
-          stroke={settings.primaryColor}
-          strokeWidth={2}
-          lineCap="round"
-          lineJoin="round"
-        />
-        <Text
-          text={supplyLabel}
-          x={supplyPoints[2] + 20}
-          y={Math.min(supplyPoints[1], supplyPoints[3]) - 20}
-          fontSize={settings.fontSize}
-          fill={settings.primaryColor}
-        />
 
         {/* Shifted up supply line (S + Tax) */}
         {showTax && clippedShiftedUpPoints && (
@@ -5126,7 +5126,12 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                   <div>
                     <select
                       value={adasView}
-                      onChange={(e) => setAdasView(e.target.value as 'neo-classical' | 'keynesian')}
+                      onChange={(e) => {
+                        setAdasView(e.target.value as 'neo-classical' | 'keynesian');
+                        if (e.target.value === 'keynesian') {
+                          setAdShift(-100);
+                        }
+                      }}
                       className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black"
                     >
                       <option value="neo-classical">Neo-Classical (Default)</option>
@@ -5189,7 +5194,6 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                         }}
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
-                
                       <label className="text-sm text-black">Decrease AD (AD₂)</label>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -5236,14 +5240,16 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                   <div className="space-y-3">
                     <div>
                       <label className="block text-sm text-black mb-1">AD Position</label>
-                      <input
-                        type="range"
-                        min="-200"
-                        max="100"
-                        value={adShift}
-                        onChange={(e) => setAdShift(parseInt(e.target.value))}
-                        className="w-full"
-                      />
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="range"
+                          min="-200"
+                          max="100"
+                          value={adShift}
+                          onChange={(e) => setAdShift(parseInt(e.target.value))}
+                          className="w-full"
+                        />
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm text-black mb-1">SRAS Position</label>

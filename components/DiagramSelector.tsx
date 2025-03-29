@@ -34,7 +34,7 @@ const diagramOptions: DiagramOption[] = [
   },
   {
     type: DiagramTypes.NEO_CLASSICAL_AD_AS,
-    title: 'Aggregate Demand & Aggregate Supply',
+    title: 'AD/AS',
     description: 'Illustrate aggregate demand and supply with various economic scenarios.',
     comingSoon: false
   },
