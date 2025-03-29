@@ -34,15 +34,9 @@ const diagramOptions: DiagramOption[] = [
   },
   {
     type: DiagramTypes.NEO_CLASSICAL_AD_AS,
-    title: 'Neo-Classical AD/AS',
+    title: 'Aggregate Demand & Aggregate Supply',
     description: 'Illustrate aggregate demand and supply with various economic scenarios.',
     comingSoon: false
-  },
-  {
-    type: DiagramTypes.KEYNESIAN_AD_AS,
-    title: 'Keynesian AD/AS',
-    description: 'Coming soon: Create Keynesian aggregate demand and supply diagrams with horizontal AS curve in the short run.',
-    comingSoon: true
   },
   {
     type: DiagramTypes.INTERNATIONAL_TRADE,

@@ -95,6 +95,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   const [adShift, setAdShift] = useState(0);
   const [srasShift, setSrasShift] = useState(0);
   const [lrasShift, setLrasShift] = useState(0);
+  const [adasView, setAdasView] = useState<'neo-classical' | 'keynesian'>('neo-classical');
+  const [showAS, setShowAS] = useState(true);
 
   interface ColorOption {
     color: string;
@@ -466,7 +468,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
         <Rect
           x={0}
           y={0}
-          width={canvasWidth + 200}
+          width={canvasWidth}
           height={canvasHeight}
           fill="white"
         />
@@ -2832,9 +2834,103 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
       return { x, y };
     };
 
+    const calculateADASIntersection = () => {
+      if (!adPoints || !showAD) return null;
+      
+      // Calculate AD line equation (y = mx + b)
+      const adM = (adPoints[3] - adPoints[1]) / (adPoints[2] - adPoints[0]);
+      const adB = adPoints[1] - adM * adPoints[0];
+
+      if (adasView === 'keynesian') {
+        // Horizontal section (x: 160 to 350, y: 300 + srasShift)
+        const horizontalY = 300 + srasShift;
+        const xAtHorizontal = (horizontalY - adB) / adM;
+        if (xAtHorizontal >= 160 && xAtHorizontal <= 400) {
+          return { x: xAtHorizontal, y: horizontalY };
+        }
+        
+        // Upward sloping section (350 to 450)
+        const x1 = 400;
+        const y1 = 300 + srasShift;
+        const x2 = 450;
+        const y2 = 250 + srasShift;
+        const slopeM = (y2 - y1) / (x2 - x1);
+        const slopeB = y1 - slopeM * x1;
+        
+        const xIntersect = (slopeB - adB) / (adM - slopeM);
+        if (xIntersect >= 350 && xIntersect <= 450) {
+          const yIntersect = adM * xIntersect + adB;
+          if (yIntersect >= 200 + srasShift && yIntersect <= 300 + srasShift) {
+            return { x: xIntersect, y: yIntersect };
+          }
+        }
+        
+        // Vertical section (x: 450)
+        const verticalX = 450;
+        const yAtVertical = adM * verticalX + adB;
+        if (yAtVertical >= 80 && yAtVertical <= 300 + srasShift) {
+          return { x: verticalX, y: yAtVertical };
+        }
+      } else {
+        // Neo-classical view - use SRAS intersection
+        if (showSRAS) {
+          const srasM = (srasPoints[3] - srasPoints[1]) / (srasPoints[2] - srasPoints[0]);
+          const srasB = srasPoints[1] - srasM * srasPoints[0];
+          
+          const xIntersect = (srasB - adB) / (adM - srasM);
+          const yIntersect = adM * xIntersect + adB;
+          
+          if (xIntersect >= 160 && xIntersect <= canvasWidth - 40 &&
+              yIntersect >= 80 && yIntersect <= canvasHeight - 70) {
+            return { x: xIntersect, y: yIntersect };
+          }
+        }
+      }
+      
+      return null;
+    };
+
     // Calculate intersection points for each shifted curve
-    const ad2Intersection = showAD2 && ad2Points ? calculateShiftedIntersection(ad2Points, srasPoints) : null;
-    const ad3Intersection = showAD3 && ad3Points ? calculateShiftedIntersection(ad3Points, srasPoints) : null;
+    function calculateAD2ASIntersection() {
+      if (!ad2Points || !showAD2) return null;
+      if (adasView === 'keynesian') {
+        const adM = (ad2Points[3] - ad2Points[1]) / (ad2Points[2] - ad2Points[0]);
+        const adB = ad2Points[1] - adM * ad2Points[0];
+        const horizontalY = 300 + srasShift;
+        const xAtHorizontal = (horizontalY - adB) / adM;
+        if (xAtHorizontal >= 160 && xAtHorizontal <= 400) {
+          return { x: xAtHorizontal, y: horizontalY };
+        }
+        const verticalX = 450;
+        const yAtVertical = adM * verticalX + adB;
+        if (yAtVertical >= 80 && yAtVertical <= 300 + srasShift) {
+          return { x: verticalX, y: yAtVertical };
+        }
+      }
+      return null;
+    }
+
+    function calculateAD3ASIntersection() {
+      if (!ad3Points || !showAD3) return null;
+      if (adasView === 'keynesian') {
+        const adM = (ad3Points[3] - ad3Points[1]) / (ad3Points[2] - ad3Points[0]);
+        const adB = ad3Points[1] - adM * ad3Points[0];
+        const horizontalY = 300 + srasShift;
+        const xAtHorizontal = (horizontalY - adB) / adM;
+        if (xAtHorizontal >= 160 && xAtHorizontal <= 400) {
+          return { x: xAtHorizontal, y: horizontalY };
+        }
+        const verticalX = 450;
+        const yAtVertical = adM * verticalX + adB;
+        if (yAtVertical >= 80 && yAtVertical <= 300 + srasShift) {
+          return { x: verticalX, y: yAtVertical };
+        }
+      }
+      return null;
+    }
+
+    const ad2Intersection = adasView === 'keynesian' ? calculateAD2ASIntersection() : (showAD2 && ad2Points ? calculateShiftedIntersection(ad2Points, srasPoints) : null);
+    const ad3Intersection = adasView === 'keynesian' ? calculateAD3ASIntersection() : (showAD3 && ad3Points ? calculateShiftedIntersection(ad3Points, srasPoints) : null);
     const sras2Intersection = showSRAS2 && sras2Points ? calculateShiftedIntersection(sras2Points, adPoints) : null;
     const sras3Intersection = showSRAS3 && sras3Points ? calculateShiftedIntersection(sras3Points, adPoints) : null;
 
@@ -2871,8 +2967,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
 
         {/* Title */}
         <Text
-          text="Neo-Classical AD/AS Model"
-          x={canvasWidth / 2}
+          text="AD/AS Diagram"
+          x={canvasWidth / 2 + 75}
           y={30}
           fontSize={settings.fontSize + 4}
           fill="#000000"
@@ -2894,7 +2990,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
         />
 
         {/* Draw LRAS */}
-        {showLRAS && (
+        {showLRAS && adasView === 'neo-classical' && (
           <>
             <Line
               points={clipLine(lrasPoints)}
@@ -2913,7 +3009,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
         )}
 
         {/* Draw SRAS */}
-        {showSRAS && (
+        {showSRAS && adasView === 'neo-classical' && (
           <>
             <Line
               points={clipLine(srasPoints)}
@@ -2924,6 +3020,46 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               text="SRAS"
               x={srasPoints[2] + 10}
               y={srasPoints[3] - 20}
+              fontSize={settings.fontSize}
+              fill={settings.primaryColor}
+            />
+          </>
+        )}
+
+        {/* Draw Keynesian AS */}
+        {showAS && adasView === 'keynesian' && (
+          <>
+            {/* Horizontal section (perfectly elastic) */}
+            <Line
+              points={clipLine([
+                160, 300 + srasShift,  // Left point (start from y-axis)
+                400, 300 + srasShift   // Right point (horizontal line)
+              ])}
+              stroke={settings.primaryColor}
+              strokeWidth={settings.lineThickness}
+            />
+            {/* Upward sloping section (intermediate) */}
+            <Line
+              points={clipLine([
+                400, 300 + srasShift,  // Left point
+                450, 250 + srasShift   // Right point (more gradual slope)
+              ])}
+              stroke={settings.primaryColor}
+              strokeWidth={settings.lineThickness}
+            />
+            {/* Vertical section (perfectly inelastic) */}
+            <Line
+              points={clipLine([
+                450, 250 + srasShift,  // Bottom point
+                450, 140                // Top point (vertical line)
+              ])}
+              stroke={settings.primaryColor}
+              strokeWidth={settings.lineThickness}
+            />
+            <Text
+              text="AS"
+              x={470 +srasShift}
+              y={110 + srasShift}
               fontSize={settings.fontSize}
               fill={settings.primaryColor}
             />
@@ -3005,7 +3141,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               fontSize={settings.fontSize}
               fill="#000000"
             />
-            {Math.abs(ad2Intersection.x - (400 + lrasShift)) > 20 && (
+            {/* Only show Y2 label if not too close to Yfe */}
+            {Math.abs(ad2Intersection.x - (adasView === 'keynesian' ? 450 : (400 + lrasShift))) > 20 && (
               <Text
                 text="Y₂"
                 x={ad2Intersection.x - 5}
@@ -3074,7 +3211,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               fontSize={settings.fontSize}
               fill="#000000"
             />
-            {Math.abs(ad3Intersection.x - (400 + lrasShift)) > 20 && (
+            {/* Only show Y3 label if not too close to Yfe */}
+            {Math.abs(ad3Intersection.x - (adasView === 'keynesian' ? 450 : (400 + lrasShift))) > 20 && (
               <Text
                 text="Y₃"
                 x={ad3Intersection.x - 5}
@@ -3225,7 +3363,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
         )}
 
         {/* Draw Equilibrium Point and Line */}
-        {showLRAS && showSRAS && showAD && (
+        {showLRAS && showAD && adasView === 'neo-classical' && (
           <>
             <Line
               points={[
@@ -3239,14 +3377,6 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               dash={[5, 5]}
               lineCap="round"
               lineJoin="round"
-            />
-            <Circle
-              x={intersection.x}
-              y={intersection.y}
-              radius={4}
-              fill="#000000"
-              stroke="#000000"
-              strokeWidth={settings.lineThickness}
             />
             <Text
               text="APL"
@@ -3311,6 +3441,95 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
           wrap="word"
           fill="#000000"
         />
+
+        {/* Draw intersection point with guide lines */}
+        {showAD && (() => {
+          const intersectionPoint = calculateADASIntersection();
+          return intersectionPoint ? (
+            <>
+              {/* Horizontal guide line to y-axis */}
+              <Line
+                points={[
+                  intersectionPoint.x,
+                  intersectionPoint.y,
+                  160,
+                  intersectionPoint.y
+                ]}
+                stroke="#000000"
+                strokeWidth={settings.lineThickness}
+                dash={[5, 5]}
+                lineCap="round"
+                lineJoin="round"
+              />
+              {/* Only show vertical guide line and Y label if not too close to Yfe */}
+              {(adasView === 'keynesian' ? Math.abs(intersectionPoint.x - 450) > 20 : Math.abs(intersectionPoint.x - (400 + lrasShift)) > 20) && (
+                <>
+                  <Line
+                    points={[
+                      intersectionPoint.x,
+                      intersectionPoint.y,
+                      intersectionPoint.x,
+                      canvasHeight - 70
+                    ]}
+                    stroke="#000000"
+                    strokeWidth={settings.lineThickness}
+                    dash={[5, 5]}
+                    lineCap="round"
+                    lineJoin="round"
+                  />
+                  <Text
+                    text="Y"
+                    x={intersectionPoint.x - 5}
+                    y={canvasHeight - 60}
+                    fontSize={settings.fontSize}
+                    fill="#000000"
+                  />
+                </>
+              )}
+              {/* APL label on y-axis */}
+              <Text
+                text="APL"
+                x={120}
+                y={intersectionPoint.y - 10}
+                fontSize={settings.fontSize}
+                fill="#000000"
+              />
+              {/* Intersection point circle */}
+              <Circle
+                x={intersectionPoint.x}
+                y={intersectionPoint.y}
+                radius={6}
+                fill="#000000"
+              />
+            </>
+          ) : null;
+        })()}
+
+        {/* Permanent Yfe line in Keynesian view */}
+        {adasView === 'keynesian' && (
+          <>
+            <Line
+              points={[
+                450,
+                250,
+                450,
+                canvasHeight - 70
+              ]}
+              stroke="#000000"
+              strokeWidth={settings.lineThickness}
+              dash={[5, 5]}
+              lineCap="round"
+              lineJoin="round"
+            />
+            <Text
+              text="Yfe"
+              x={450 - 5}
+              y={canvasHeight - 60}
+              fontSize={settings.fontSize}
+              fill="#000000"
+            />
+          </>
+        )}
       </Layer>
     );
   };
@@ -4903,25 +5122,49 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               {/* Neo-Classical AD/AS Controls */}
               {type === DiagramTypes.NEO_CLASSICAL_AD_AS && (
                 <div className="space-y-4">
+                  <h4 className="text-sm font-medium text-black">Model Type</h4>
+                  <div>
+                    <select
+                      value={adasView}
+                      onChange={(e) => setAdasView(e.target.value as 'neo-classical' | 'keynesian')}
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black"
+                    >
+                      <option value="neo-classical">Neo-Classical (Default)</option>
+                      <option value="keynesian">Keynesian</option>
+                    </select>
+                  </div>
+
                   <h4 className="text-sm font-medium text-black">Curve Controls</h4>
                   <div className="space-y-3">
                     <div className="flex items-center space-x-2">
                       <input
                         type="checkbox"
-                        checked={showLRAS}
+                        checked={adasView === 'keynesian' ? false : showLRAS}
                         onChange={(e) => setShowLRAS(e.target.checked)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        disabled={adasView === 'keynesian'}
+                        className={`rounded border-gray-300 text-blue-600 focus:ring-blue-500 ${adasView === 'keynesian' ? 'opacity-50 cursor-not-allowed' : ''}`}
                       />
-                      <label className="text-sm text-black">Show LRAS</label>
+                      <label className={`text-sm ${adasView === 'keynesian' ? 'text-gray-400' : 'text-black'}`}>Show LRAS</label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <input
                         type="checkbox"
-                        checked={showSRAS}
+                        checked={adasView === 'keynesian' ? false : showSRAS}
                         onChange={(e) => setShowSRAS(e.target.checked)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        disabled={adasView === 'keynesian'}
+                        className={`rounded border-gray-300 text-blue-600 focus:ring-blue-500 ${adasView === 'keynesian' ? 'opacity-50 cursor-not-allowed' : ''}`}
                       />
-                      <label className="text-sm text-black">Show SRAS</label>
+                      <label className={`text-sm ${adasView === 'keynesian' ? 'text-gray-400' : 'text-black'}`}>Show SRAS</label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={adasView === 'keynesian' ? showAS : false}
+                        onChange={(e) => setShowAS(e.target.checked)}
+                        disabled={adasView === 'neo-classical'}
+                        className={`rounded border-gray-300 text-blue-600 focus:ring-blue-500 ${adasView === 'neo-classical' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      />
+                      <label className={`text-sm ${adasView === 'neo-classical' ? 'text-gray-400' : 'text-black'}`}>Show AS</label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <input
@@ -4964,26 +5207,28 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                     <div className="flex items-center space-x-2">
                       <input
                         type="checkbox"
-                        checked={showSRAS2}
+                        checked={adasView === 'keynesian' ? false : showSRAS2}
                         onChange={(e) => {
                           setShowSRAS2(e.target.checked);
                           setShowSRAS3(false);
                         }}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        disabled={adasView === 'keynesian'}
+                        className={`rounded border-gray-300 text-blue-600 focus:ring-blue-500 ${adasView === 'keynesian' ? 'opacity-50 cursor-not-allowed' : ''}`}
                       />
-                      <label className="text-sm text-black">Increase SRAS (SRAS₂)</label>
+                      <label className={`text-sm ${adasView === 'keynesian' ? 'text-gray-400' : 'text-black'}`}>Increase SRAS (SRAS₂)</label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <input
                         type="checkbox"
-                        checked={showSRAS3}
+                        checked={adasView === 'keynesian' ? false : showSRAS3}
                         onChange={(e) => {
                           setShowSRAS3(e.target.checked);
                           setShowSRAS2(false);
                         }}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        disabled={adasView === 'keynesian'}
+                        className={`rounded border-gray-300 text-blue-600 focus:ring-blue-500 ${adasView === 'keynesian' ? 'opacity-50 cursor-not-allowed' : ''}`}
                       />
-                      <label className="text-sm text-black">Decrease SRAS (SRAS₃)</label>
+                      <label className={`text-sm ${adasView === 'keynesian' ? 'text-gray-400' : 'text-black'}`}>Decrease SRAS (SRAS₃)</label>
                     </div>
                   </div>
 
@@ -4993,7 +5238,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                       <label className="block text-sm text-black mb-1">AD Position</label>
                       <input
                         type="range"
-                        min="-100"
+                        min="-200"
                         max="100"
                         value={adShift}
                         onChange={(e) => setAdShift(parseInt(e.target.value))}
