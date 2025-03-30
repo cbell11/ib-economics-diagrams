@@ -504,8 +504,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
         {/* Title */}
         <Text
           text={settings.title || ""}
-          x={(canvasWidth + 200) / 2 - 300}
-          y={20}
+          x={(canvasWidth + 200) / 2 - 325}
+          y={10}
           fontSize={settings.fontSize * 1.2}
           fill="#000000"
           width={600}
@@ -5820,7 +5820,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                         onChange={(e) => onUpdateSettings({ ...settings, supplyElasticity: e.target.value as ElasticityType })}
                         className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black"
                       >
-                        <option value="unitary">Unitary Elastic</option>
+                        <option value="unitary">Unitary (Default)</option>
                         <option value="relatively-elastic">Relatively Elastic</option>
                         <option value="relatively-inelastic">Relatively Inelastic</option>
                         <option value="perfectly-elastic">Perfectly Elastic</option>
@@ -5834,7 +5834,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                         onChange={(e) => onUpdateSettings({ ...settings, demandElasticity: e.target.value as ElasticityType })}
                         className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black"
                       >
-                        <option value="unitary">Unitary Elastic</option>
+                        <option value="unitary">Unitary (Default)</option>
                         <option value="relatively-elastic">Relatively Elastic</option>
                         <option value="relatively-inelastic">Relatively Inelastic</option>
                         <option value="perfectly-elastic">Perfectly Elastic</option>
