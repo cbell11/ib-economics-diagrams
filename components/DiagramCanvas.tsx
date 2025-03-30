@@ -104,6 +104,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   const [showMd2, setShowMd2] = useState(false);
   const [showIncreasedMs, setShowIncreasedMs] = useState(false);
   const [showDecreasedMs, setShowDecreasedMs] = useState(false);
+  const [showIncreasedMd, setShowIncreasedMd] = useState(false);
 
   interface ColorOption {
     color: string;
@@ -3724,6 +3725,12 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
       550, 550 + moneyDemandShift   // Right point, shifted down
     ];
 
+    // Calculate points for increased Money Demand (Md₃)
+    const increasedMdPoints = [
+      160, 50 + moneyDemandShift,  // Left point, shifted up
+      550, 350 + moneyDemandShift   // Right point, shifted up
+    ];
+
     // Calculate equilibrium points
     const calculateEquilibriumY = (supplyX: number, demandPoints: number[]) => {
       const [mdX1, mdY1, mdX2, mdY2] = demandPoints;
@@ -3758,6 +3765,13 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
     const equilibriumPointMd2 = showMd2 && equilibriumYMd2 !== undefined ? {
       x: msPoints[0],
       y: equilibriumYMd2
+    } : undefined;
+
+    // Md₃ equilibrium points
+    const equilibriumYMd3 = showIncreasedMd ? calculateEquilibriumY(msPoints[0], increasedMdPoints) : undefined;
+    const equilibriumPointMd3 = showIncreasedMd && equilibriumYMd3 !== undefined ? {
+      x: msPoints[0],
+      y: equilibriumYMd3
     } : undefined;
 
     return (
@@ -3849,11 +3863,10 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               points={clipLine(increasedMsPoints)}
               stroke={settings.primaryColor}
               strokeWidth={settings.lineThickness}
-              dash={[5, 5]}
             />
             <Text
               text="Ms₂"
-              x={increasedMsPoints[0] + 10}
+              x={increasedMsPoints[0] + 0}
               y={increasedMsPoints[1] - 20}
               fontSize={settings.fontSize}
               fill={settings.primaryColor}
@@ -3863,8 +3876,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               points={[msPoints[0] + 10, msPoints[1] + 50, increasedMsPoints[0] - 5, increasedMsPoints[1] + 50]}
               pointerLength={10}
               pointerWidth={10}
-              fill={settings.primaryColor}
-              stroke={settings.primaryColor}
+              fill={"#000000"}
+              stroke={"#000000"}
               strokeWidth={settings.lineThickness}
             />
           </>
@@ -3877,7 +3890,6 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               points={clipLine(decreasedMsPoints)}
               stroke={settings.primaryColor}
               strokeWidth={settings.lineThickness}
-              dash={[5, 5]}
             />
             <Text
               text="Ms₃"
@@ -3891,8 +3903,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               points={[msPoints[0] - 10, msPoints[1] + 50, decreasedMsPoints[0] + 5, decreasedMsPoints[1] + 50]}
               pointerLength={10}
               pointerWidth={10}
-              fill={settings.primaryColor}
-              stroke={settings.primaryColor}
+              fill={"#000000"}
+              stroke={"#000000"}
               strokeWidth={settings.lineThickness}
             />
           </>
@@ -3905,7 +3917,6 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               points={clipLine(decreasedMdPoints)}
               stroke={settings.secondaryColor}
               strokeWidth={settings.lineThickness}
-              dash={[5, 5]}
             />
             <Text
               text="Md₂"
@@ -3916,11 +3927,38 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
             />
             {/* Arrow showing decrease */}
             <Arrow
-              points={[mdPoints[2] - 50, mdPoints[3] - 10, decreasedMdPoints[2] - 50, decreasedMdPoints[3] - 10]}
+              points={[mdPoints[2] - 50, mdPoints[3] - 10, decreasedMdPoints[2] - 100, decreasedMdPoints[3] - 110]}
               pointerLength={10}
               pointerWidth={10}
-              fill={settings.secondaryColor}
+              fill={"#000000"}
+              stroke={"#000000"}
+              strokeWidth={settings.lineThickness}
+            />
+          </>
+        )}
+
+        {/* Draw increased Money Demand (Md₃) */}
+        {showIncreasedMd && (
+          <>
+            <Line
+              points={clipLine(increasedMdPoints)}
               stroke={settings.secondaryColor}
+              strokeWidth={settings.lineThickness}
+            />
+            <Text
+              text="Md₃"
+              x={increasedMdPoints[2] + 10}
+              y={increasedMdPoints[3] - 20}
+              fontSize={settings.fontSize}
+              fill={settings.secondaryColor}
+            />
+            {/* Arrow showing increase */}
+            <Arrow
+              points={[mdPoints[2] - 100, mdPoints[3] - 110, increasedMdPoints[2] - 50, increasedMdPoints[3] - 10]}
+              pointerLength={10}
+              pointerWidth={10}
+              fill={"#000000"}
+              stroke={"#000000"}
               strokeWidth={settings.lineThickness}
             />
           </>
@@ -4078,6 +4116,46 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
             <Text
               text="Q₄"
               x={equilibriumPointMd2.x - 8}
+              y={canvasHeight - 55}
+              fontSize={settings.fontSize}
+              fill="#000000"
+            />
+          </>
+        )}
+
+        {/* Md₃ equilibrium */}
+        {showIncreasedMd && equilibriumPointMd3 && (
+          <>
+            <Line
+              points={[equilibriumPointMd3.x, equilibriumPointMd3.y, equilibriumPointMd3.x, canvasHeight - 70]}
+              stroke="#666666"
+              strokeWidth={1}
+              dash={[4, 4]}
+            />
+            <Line
+              points={[160, equilibriumPointMd3.y, equilibriumPointMd3.x, equilibriumPointMd3.y]}
+              stroke="#666666"
+              strokeWidth={1}
+              dash={[4, 4]}
+            />
+            <Circle
+              x={equilibriumPointMd3.x}
+              y={equilibriumPointMd3.y}
+              radius={6}
+              fill="#000000"
+              stroke="#000000"
+              strokeWidth={1}
+            />
+            <Text
+              text="IR₅"
+              x={125}
+              y={equilibriumPointMd3.y - 8}
+              fontSize={settings.fontSize}
+              fill="#000000"
+            />
+            <Text
+              text="Q₅"
+              x={equilibriumPointMd3.x - 8}
               y={canvasHeight - 55}
               fontSize={settings.fontSize}
               fill="#000000"
@@ -5700,20 +5778,30 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                           <input
                             type="checkbox"
                             className="checkbox"
-                            checked={showMd2}
-                            onChange={() => setShowMd2(!showMd2)}
-                          />
-                          <span className="text-sm text-black">Decrease Money Demand (Md₂)</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            className="checkbox"
                             checked={showDecreasedMs}
                             onChange={() => setShowDecreasedMs(!showDecreasedMs)}
                           />
                           <span className="text-sm text-black">Decrease Money Supply (Ms₃)</span>
                         </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            className="checkbox"
+                            checked={showIncreasedMd}
+                            onChange={() => setShowIncreasedMd(!showIncreasedMd)}
+                          />
+                          <span className="text-sm text-black">Increase Money Demand (Md₃)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            className="checkbox"
+                            checked={showMd2}
+                            onChange={() => setShowMd2(!showMd2)}
+                          />
+                          <span className="text-sm text-black">Decrease Money Demand (Md₂)</span>
+                        </div>
+                        
                       </div>
                     </div>
                   )}
