@@ -1,13 +1,14 @@
 import { ElasticityType } from './elasticity';
 
-export enum DiagramTypes {
-  SUPPLY_DEMAND = 'SUPPLY_DEMAND',
-  NEO_CLASSICAL_AD_AS = 'NEO_CLASSICAL_AD_AS',
-  KEYNESIAN_AD_AS = 'KEYNESIAN_AD_AS',
-  EXTERNALITIES = 'EXTERNALITIES',
-  INTERNATIONAL_TRADE = 'INTERNATIONAL_TRADE',
-  PPC = 'PPC'
-}
+export const DiagramTypes = {
+  SUPPLY_DEMAND: 'SUPPLY_DEMAND',
+  NEO_CLASSICAL_AD_AS: 'NEO_CLASSICAL_AD_AS',
+  KEYNESIAN_AD_AS: 'KEYNESIAN_AD_AS',
+  EXTERNALITIES: 'EXTERNALITIES',
+  INTERNATIONAL_TRADE: 'INTERNATIONAL_TRADE',
+  PPC: 'PPC',
+  MONEY_MARKET: 'MONEY_MARKET'
+} as const;
 
 export type DiagramType = typeof DiagramTypes[keyof typeof DiagramTypes];
 
