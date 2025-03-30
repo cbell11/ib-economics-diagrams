@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { DiagramType, DiagramTypes } from '../types/diagram';
 
 interface DiagramSelectorProps {
@@ -39,6 +39,12 @@ const diagramOptions: DiagramOption[] = [
     comingSoon: false
   },
   {
+    type: DiagramTypes.MONEY_MARKET,
+    title: 'Money Market',
+    description: 'Create money market diagrams showing the relationship between interest rates and quantity of money.',
+    comingSoon: false
+  },
+  {
     type: DiagramTypes.INTERNATIONAL_TRADE,
     title: 'International Trade',
     description: 'Create diagrams showing trade patterns, tariffs, and quotas.',
@@ -47,12 +53,20 @@ const diagramOptions: DiagramOption[] = [
 ];
 
 export default function DiagramSelector({ onSelect }: DiagramSelectorProps) {
+  useEffect(() => {
+    console.log('Available DiagramTypes:', DiagramTypes);
+    console.log('Diagram options:', diagramOptions);
+    console.log('MONEY_MARKET type:', DiagramTypes.MONEY_MARKET);
+    console.log('Money Market option:', diagramOptions.find(opt => opt.type === DiagramTypes.MONEY_MARKET));
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">EconGraph Pro</h1>
           <p className="text-xl text-gray-600">Select a diagram type</p>
+          <p className="text-sm text-gray-500 mt-2">Available options: {diagramOptions.filter(opt => !opt.comingSoon).length}</p>
         </div>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {diagramOptions.map((option) => (

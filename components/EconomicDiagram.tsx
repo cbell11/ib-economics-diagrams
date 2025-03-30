@@ -37,6 +37,12 @@ export const EconomicDiagram = ({ type, title }: EconomicDiagramProps) => {
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    console.log('EconomicDiagram - Received type:', type);
+    console.log('EconomicDiagram - Available diagrams:', availableDiagrams);
+    console.log('EconomicDiagram - Is type available:', availableDiagrams.includes(type));
+  }, [type]);
+
   // Define available diagrams
   const availableDiagrams: DiagramType[] = [
     DiagramTypes.SUPPLY_DEMAND,
@@ -48,6 +54,7 @@ export const EconomicDiagram = ({ type, title }: EconomicDiagramProps) => {
 
   // Show "Coming Soon" for unimplemented diagrams
   if (!availableDiagrams.includes(type)) {
+    console.log('EconomicDiagram - Diagram not available:', type);
     return (
       <div className="w-full h-96 flex items-center justify-center">
         <p className="text-xl text-gray-600">Coming Soon</p>
