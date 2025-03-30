@@ -17,9 +17,11 @@ export const EconomicDiagram = ({ type, title }: EconomicDiagramProps) => {
   const [settings, setSettings] = useState<DiagramSettings>({
     title: title,
     xAxisLabel: type === DiagramTypes.PPC ? 'Good B' : 
-               type === DiagramTypes.NEO_CLASSICAL_AD_AS ? 'Real GDP' : 'Quantity',
+               type === DiagramTypes.NEO_CLASSICAL_AD_AS ? 'Real GDP' :
+               type === DiagramTypes.MONEY_MARKET ? 'Quantity of Money' : 'Quantity',
     yAxisLabel: type === DiagramTypes.PPC ? 'Good A' : 
-               type === DiagramTypes.NEO_CLASSICAL_AD_AS ? 'Average Price Level ($)' : 'Price',
+               type === DiagramTypes.NEO_CLASSICAL_AD_AS ? 'Average Price Level ($)' :
+               type === DiagramTypes.MONEY_MARKET ? 'Interest Rate (%)' : 'Price',
     fontSize: 16,
     lineThickness: 2,
     primaryColor: '#0066cc',
@@ -35,11 +37,17 @@ export const EconomicDiagram = ({ type, title }: EconomicDiagramProps) => {
     setMounted(true);
   }, []);
 
+  // Define available diagrams
+  const availableDiagrams: DiagramType[] = [
+    DiagramTypes.SUPPLY_DEMAND,
+    DiagramTypes.EXTERNALITIES,
+    DiagramTypes.PPC,
+    DiagramTypes.NEO_CLASSICAL_AD_AS,
+    DiagramTypes.MONEY_MARKET
+  ];
+
   // Show "Coming Soon" for unimplemented diagrams
-  if (type !== DiagramTypes.SUPPLY_DEMAND && 
-      type !== DiagramTypes.EXTERNALITIES && 
-      type !== DiagramTypes.PPC &&
-      type !== DiagramTypes.NEO_CLASSICAL_AD_AS) {
+  if (!availableDiagrams.includes(type)) {
     return (
       <div className="w-full h-96 flex items-center justify-center">
         <p className="text-xl text-gray-600">Coming Soon</p>
