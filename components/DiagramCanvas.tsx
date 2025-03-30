@@ -102,7 +102,6 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   const [moneyDemandShift, setMoneyDemandShift] = useState(0);
   const [showMs2, setShowMs2] = useState(false);
   const [showMd2, setShowMd2] = useState(false);
-  const [showIncreasedMs, setShowIncreasedMs] = useState(false);
   const [showDecreasedMs, setShowDecreasedMs] = useState(false);
   const [showIncreasedMd, setShowIncreasedMd] = useState(false);
 
