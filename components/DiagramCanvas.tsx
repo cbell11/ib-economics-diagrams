@@ -6105,7 +6105,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                     marginBottom: '0.5rem'
                   }}
                 >
-                  EconGraph Pro Subscription
+                  EconGraph Pro Subscription ($2.99)
                 </button>
                 <ul style={{
                   listStyle: 'disc',
@@ -6137,7 +6137,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                     marginBottom: '0.5rem'
                   }}
                 >
-                  Student Membership
+                  Student Membership ($12.99)
                 </button>
                 <ul style={{
                   listStyle: 'disc',
