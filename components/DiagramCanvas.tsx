@@ -4307,12 +4307,8 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
     }
   };
 
-  const handleEconGraphProSubscription = () => {
-    window.location.href = 'https://diplomacollective.com/register/econ-student-econgraph-pro/';
-  };
-
-  const handleStudentSubscription = () => {
-    window.location.href = 'https://diplomacollective.com/register/econ-student-monthly/';
+  const handleEliteSubscription = () => {
+    window.location.href = 'https://diplomacollective.com/home/for-students/elite-student-all-access-pass-membership/';
   };
 
   if (!mounted) {
@@ -6075,23 +6071,23 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               marginBottom: '1rem',
               color: '#1f2937'
             }}>
-              Choose Your Subscription
+              Join Our Elite IB Student Membership To Download
             </h2>
             <p style={{
               marginBottom: '1.5rem',
               color: '#4b5563'
             }}>
-              To download diagrams without watermarks, please choose a subscription:
+              Here is all you get with it:
             </p>
             <div style={{
               display: 'flex',
               flexDirection: 'column',
               gap: '1.5rem'
             }}>
-              {/* EconGraph Pro Button */}
+              {/* Elite Membership Monthly Button */}
               <div>
                 <button
-                  onClick={handleEconGraphProSubscription}
+                  onClick={handleEliteSubscription}
                   style={{
                     padding: '0.75rem 1rem',
                     backgroundColor: '#40b36e',
@@ -6105,7 +6101,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                     marginBottom: '0.5rem'
                   }}
                 >
-                  EconGraph Pro Subscription ($2.99)
+                  Elite IB Student Membership ($10/month)
                 </button>
                 <ul style={{
                   listStyle: 'disc',
@@ -6113,41 +6109,17 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                   color: '#4b5563',
                   fontSize: '0.875rem'
                 }}>
-                  <li>Download diagrams without watermarks</li>
-                  <li>Access to all diagram types</li>
-                  <li>Customize colors and styles</li>
-                  <li>Export in high resolution</li>
-                </ul>
-              </div>
-
-              {/* Student Membership Button */}
-              <div>
-                <button
-                  onClick={handleStudentSubscription}
-                  style={{
-                    padding: '0.75rem 1rem',
-                    backgroundColor: '#40b36e',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontSize: '1rem',
-                    fontWeight: '500',
-                    width: '100%',
-                    marginBottom: '0.5rem'
-                  }}
-                >
-                  Student Membership ($12.99)
-                </button>
-                <ul style={{
-                  listStyle: 'disc',
-                  paddingLeft: '1.5rem',
-                  color: '#4b5563',
-                  fontSize: '0.875rem'
-                }}>
-                  <li>All EconGraph Pro features</li>
-                  <li>Step-By-Step Econ IA Guide</li>
-                  <li>Power Review Pack Access</li>
+                  <li>Full access to EconGraph Pro without watermarks</li>
+                  <li>Full IB Economics IA Guide, EE Guide, Notes, and practice papers</li>
+                  <li>Full access to all of our other IA guides including:
+                    <ul style={{ paddingLeft: '1rem', marginTop: '0.5rem' }}>
+                      <li>Math AA and AI</li>
+                      <li>Biology, Chemistry, and Physics</li>
+                      <li>History</li>
+                      <li>Business Management</li>
+                      <li>TOK Exhibition</li>
+                    </ul>
+                  </li>
                 </ul>
               </div>
 
