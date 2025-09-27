@@ -6101,7 +6101,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                     marginBottom: '0.5rem'
                   }}
                 >
-                  Elite IB Student Membership ($10/month)
+                  Elite IB Student Membership (Start For $1)
                 </button>
                 <ul style={{
                   listStyle: 'disc',
@@ -6111,7 +6111,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
                 }}>
                   <li>Full access to EconGraph Pro without watermarks</li>
                   <li>Full IB Economics IA Guide, EE Guide, Notes, and practice papers</li>
-                  <li>Full access to all of our other IA guides including:
+                  <li>Full access to ALL of our student resources:
                     <ul style={{ paddingLeft: '1rem', marginTop: '0.5rem' }}>
                       <li>Math AA and AI</li>
                       <li>Biology, Chemistry, and Physics</li>
