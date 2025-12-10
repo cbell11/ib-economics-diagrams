@@ -4337,10 +4337,6 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
     }
   };
 
-  const handleEliteSubscription = () => {
-    window.location.href = 'https://diplomacollective.com/home/for-students/elite-student-all-access-pass-membership/';
-  };
-
   if (!mounted) {
     return (
       <div style={{ 

@@ -8,6 +8,15 @@ const DiagramCanvas = dynamic(() => import('./DiagramCanvas'), {
   ssr: false
 });
 
+// Define available diagrams (constant, outside component to avoid re-creation)
+const availableDiagrams: DiagramType[] = [
+  DiagramTypes.SUPPLY_DEMAND,
+  DiagramTypes.EXTERNALITIES,
+  DiagramTypes.PPC,
+  DiagramTypes.NEO_CLASSICAL_AD_AS,
+  DiagramTypes.MONEY_MARKET
+];
+
 export interface EconomicDiagramProps {
   type: DiagramType;
   title: string;
@@ -42,15 +51,6 @@ export const EconomicDiagram = ({ type, title }: EconomicDiagramProps) => {
     console.log('EconomicDiagram - Available diagrams:', availableDiagrams);
     console.log('EconomicDiagram - Is type available:', availableDiagrams.includes(type));
   }, [type]);
-
-  // Define available diagrams
-  const availableDiagrams: DiagramType[] = [
-    DiagramTypes.SUPPLY_DEMAND,
-    DiagramTypes.EXTERNALITIES,
-    DiagramTypes.PPC,
-    DiagramTypes.NEO_CLASSICAL_AD_AS,
-    DiagramTypes.MONEY_MARKET
-  ];
 
   // Show "Coming Soon" for unimplemented diagrams
   if (!availableDiagrams.includes(type)) {
