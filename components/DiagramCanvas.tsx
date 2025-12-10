@@ -7,18 +7,21 @@ import { Stage, Layer, Line, Text, Circle, Rect, Arrow } from 'react-konva';
 import Konva from 'konva';
 import CanvasControls from './CanvasControls';
 
-// Check if user has a valid user_id from Diploma Collective membership
-function isUserIdValid(userId: string | null): boolean {
-  if (!userId) return false;
+// Check if user has access (user_id in URL or localStorage)
+function hasUserAccess(): boolean {
+  if (typeof window === 'undefined') return false;
   
-  // Check it's not empty and not the placeholder shortcode
-  if (userId.trim() === '' || userId === '[econgraph_link]') {
-    console.log("Invalid user_id: empty or placeholder");
-    return false;
-  }
+  // Check URL for user_id parameter
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlUserId = urlParams.get('user_id');
   
-  console.log("Valid user_id found:", userId);
-  return true;
+  // Check localStorage for stored user_id
+  const storedUserId = localStorage.getItem('auth_user_id');
+  
+  console.log("Access check - URL user_id:", urlUserId, "| Stored user_id:", storedUserId);
+  
+  // Allow if user_id exists in URL or localStorage
+  return !!(urlUserId || storedUserId);
 }
 
 type ElasticityType = 'unitary' | 'relatively-elastic' | 'relatively-inelastic' | 'perfectly-elastic' | 'perfectly-inelastic';
@@ -56,18 +59,6 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   onUpdateSettings,
   mounted
 }, ref) => {
-  // User authentication state
-  const [hasValidUser, setHasValidUser] = useState(false);
-  
-  // Check for valid user_id on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const userId = localStorage.getItem('auth_user_id');
-      console.log("Checking auth_user_id from localStorage:", userId);
-      setHasValidUser(isUserIdValid(userId));
-    }
-  }, []);
-  
   const [showP2, setShowP2] = useState(false);
   const [showP3, setShowP3] = useState(false);
   const [showShading, setShowShading] = useState(false);
@@ -4237,12 +4228,13 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
       return;
     }
 
-    // Check if user has a valid user_id (from Diploma Collective membership)
-    console.log("User validation result:", { hasValidUser });
+    // Check if user has access (user_id in URL or localStorage)
+    const canDownload = hasUserAccess();
+    console.log("User access check result:", canDownload);
 
-    // User must have a valid user_id to download without watermark
-    if (!hasValidUser) {
-      console.log("No valid user_id, showing payment dialog");
+    // User must have a user_id to download without watermark
+    if (!canDownload) {
+      console.log("No user_id found, showing payment dialog");
       setShowPaymentDialog(true);
       return;
     }
