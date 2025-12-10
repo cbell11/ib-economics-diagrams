@@ -1,11 +1,43 @@
 'use client';
 
-import { useState, forwardRef, useRef, useImperativeHandle } from 'react';
+import { useState, forwardRef, useRef, useImperativeHandle, useEffect } from 'react';
 import type { DiagramSettings, DiagramType } from '../types/diagram';
 import { DiagramTypes } from '../types/diagram';
 import { Stage, Layer, Line, Text, Circle, Rect, Arrow } from 'react-konva';
 import Konva from 'konva';
 import CanvasControls from './CanvasControls';
+
+// Client-safe token validation (checks if token exists and isn't expired)
+function isTokenValid(token: string): boolean {
+  try {
+    // JWT tokens are base64 encoded with 3 parts separated by dots
+    const parts = token.split('.');
+    if (parts.length !== 3) return false;
+    
+    // Decode the payload (middle part)
+    const payload = JSON.parse(atob(parts[1]));
+    
+    // Check if token has expired
+    if (payload.exp) {
+      const now = Date.now() / 1000;
+      if (payload.exp < now) {
+        console.log("Token expired");
+        return false;
+      }
+    }
+    
+    // Check if user_id exists
+    if (!payload.user_id) {
+      console.log("No user_id in token");
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Token validation error:", error);
+    return false;
+  }
+}
 
 type ElasticityType = 'unitary' | 'relatively-elastic' | 'relatively-inelastic' | 'perfectly-elastic' | 'perfectly-inelastic';
 
@@ -42,6 +74,19 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   onUpdateSettings,
   mounted
 }, ref) => {
+  // Token verification state
+  const [hasValidToken, setHasValidToken] = useState(false);
+  
+  // Check for valid token on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        setHasValidToken(isTokenValid(token));
+      }
+    }
+  }, []);
+  
   const [showP2, setShowP2] = useState(false);
   const [showP3, setShowP3] = useState(false);
   const [showShading, setShowShading] = useState(false);
@@ -4203,19 +4248,6 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
     }
   };
 
-  function isValidReferrer(referrer: string): boolean {
-    // The main allowed referrer
-    const allowedReferrer = "https://diplomacollective.com/home/for-students/econgraph-pro/";
-    
-    // Also allow if user navigates within the app after coming from allowed referrer
-    const isFromAllowedDomain = referrer.startsWith("https://diplomacollective.com/");
-    
-    // For development and testing
-    const isDevelopment = process.env.NODE_ENV === "development";
-    
-    return referrer === allowedReferrer || isFromAllowedDomain || isDevelopment;
-  }
-
   const handleDownload = async (format: 'png' | 'jpg') => {
     console.log("Starting download process...");
     
@@ -4224,14 +4256,12 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
       return;
     }
 
-    const referrer = document.referrer;
-    console.log("Current referrer:", referrer);
-    
-    const isValid = isValidReferrer(referrer);
-    console.log("Referrer validation result:", { isValid, referrer });
+    // Check if user has a valid token (from state, updated on mount)
+    console.log("Token validation result:", { hasValidToken });
 
-    if (!isValid) {
-      console.log("Invalid referrer, showing payment dialog");
+    // User must have a valid token to download without watermark
+    if (!hasValidToken) {
+      console.log("No valid token, showing payment dialog");
       setShowPaymentDialog(true);
       return;
     }
@@ -6060,111 +6090,101 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
         }}>
           <div style={{
             backgroundColor: 'white',
-            padding: '2rem',
-            borderRadius: '8px',
-            maxWidth: '500px',
-            width: '90%'
+            padding: '2.5rem',
+            borderRadius: '12px',
+            maxWidth: '450px',
+            width: '90%',
+            textAlign: 'center'
           }}>
             <h2 style={{
-              fontSize: '1.5rem',
+              fontSize: '1.75rem',
               fontWeight: 'bold',
               marginBottom: '1rem',
               color: '#1f2937'
             }}>
-              Join Our Elite IB Student Membership To Download
+              Unlock EconGraph Pro
             </h2>
             <p style={{
               marginBottom: '1.5rem',
-              color: '#4b5563'
+              color: '#4b5563',
+              fontSize: '1.1rem',
+              lineHeight: '1.6'
             }}>
-              Here is all you get with it:
+              Create and save <strong>UNLIMITED</strong> diagrams using EconGraph Pro. No hidden costs or extra charges.
             </p>
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '1.5rem'
+            <p style={{
+              marginBottom: '2rem',
+              color: '#40b36e',
+              fontSize: '1.5rem',
+              fontWeight: 'bold'
             }}>
-              {/* Elite Membership Monthly Button */}
-              <div>
-                <button
-                  onClick={handleEliteSubscription}
-                  style={{
-                    padding: '0.75rem 1rem',
-                    backgroundColor: '#40b36e',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontSize: '1rem',
-                    fontWeight: '500',
-                    width: '100%',
-                    marginBottom: '0.5rem'
-                  }}
-                >
-                  Elite IB Student Membership (Start For $1)
-                </button>
-                <ul style={{
-                  listStyle: 'disc',
-                  paddingLeft: '1.5rem',
-                  color: '#4b5563',
-                  fontSize: '0.875rem'
-                }}>
-                  <li>Full access to EconGraph Pro without watermarks</li>
-                  <li>Full IB Economics IA Guide, EE Guide, Notes, and practice papers</li>
-                  <li>Full access to ALL of our student resources:
-                    <ul style={{ paddingLeft: '1rem', marginTop: '0.5rem' }}>
-                      <li>Math AA and AI</li>
-                      <li>Biology, Chemistry, and Physics</li>
-                      <li>History</li>
-                      <li>Business Management</li>
-                      <li>TOK Exhibition</li>
-                    </ul>
-                  </li>
-                </ul>
-              </div>
+              Just $20 for an entire year.
+            </p>
+            
+            <a
+              href="https://diplomacollective.com/register/econ-student-econgraph-pro/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-block',
+                padding: '1rem 2rem',
+                backgroundColor: '#40b36e',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                textDecoration: 'none',
+                width: '100%',
+                marginBottom: '1rem'
+              }}
+            >
+              Get Started Now
+            </a>
 
-              {/* Already a member section */}
-              <div style={{
-                borderTop: '1px solid #e5e7eb',
-                paddingTop: '1rem',
-                textAlign: 'center'
+            {/* Already a member section */}
+            <div style={{
+              borderTop: '1px solid #e5e7eb',
+              paddingTop: '1rem',
+              marginTop: '1rem'
+            }}>
+              <p style={{
+                color: '#4b5563',
+                marginBottom: '0.5rem',
+                fontSize: '0.875rem'
               }}>
-                <p style={{
-                  color: '#4b5563',
-                  marginBottom: '0.5rem',
-                  fontSize: '0.875rem'
-                }}>
-                  Already a member?
-                </p>
-                <a
-                  href="https://diplomacollective.com/home/for-students/econgraph-pro/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    color: '#40b36e',
-                    textDecoration: 'none',
-                    fontWeight: '500',
-                    fontSize: '0.875rem'
-                  }}
-                >
-                  Login here
-                </a>
-              </div>
-
-              <button
-                onClick={() => setShowPaymentDialog(false)}
+                Already a member?
+              </p>
+              <a
+                href="https://diplomacollective.com/home/for-students/econgraph-pro/"
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{
-                  padding: '0.5rem',
-                  backgroundColor: 'transparent',
-                  color: '#6b7280',
-                  border: 'none',
-                  cursor: 'pointer',
+                  color: '#40b36e',
+                  textDecoration: 'none',
+                  fontWeight: '500',
                   fontSize: '0.875rem'
                 }}
               >
-                Cancel
-              </button>
+                Login here
+              </a>
             </div>
+
+            <button
+              onClick={() => setShowPaymentDialog(false)}
+              style={{
+                padding: '0.75rem',
+                backgroundColor: 'transparent',
+                color: '#6b7280',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+                marginTop: '1rem'
+              }}
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
