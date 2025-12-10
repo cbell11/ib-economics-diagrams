@@ -15,19 +15,20 @@ const DiagramSelector = dynamic(() => import('../components/DiagramSelector'), {
   loading: () => <div>Loading selector...</div>
 });
 
-// Separate client component for token handling
+// Separate client component for user_id handling
 function TokenHandler() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
     if (!searchParams) return;
     
-    // Check for token in URL parameters
-    const token = searchParams.get('token');
-    if (token) {
-      // Store token in localStorage
-      localStorage.setItem('auth_token', token);
-      // Remove token from URL
+    // Check for user_id in URL parameters (from Diploma Collective membership)
+    const userId = searchParams.get('user_id');
+    if (userId && userId !== '[econgraph_link]') {
+      // Store user_id in localStorage
+      localStorage.setItem('auth_user_id', userId);
+      console.log('User ID stored:', userId);
+      // Remove user_id from URL for cleaner display
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [searchParams]);

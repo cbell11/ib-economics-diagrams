@@ -7,36 +7,18 @@ import { Stage, Layer, Line, Text, Circle, Rect, Arrow } from 'react-konva';
 import Konva from 'konva';
 import CanvasControls from './CanvasControls';
 
-// Client-safe token validation (checks if token exists and isn't expired)
-function isTokenValid(token: string): boolean {
-  try {
-    // JWT tokens are base64 encoded with 3 parts separated by dots
-    const parts = token.split('.');
-    if (parts.length !== 3) return false;
-    
-    // Decode the payload (middle part)
-    const payload = JSON.parse(atob(parts[1]));
-    
-    // Check if token has expired
-    if (payload.exp) {
-      const now = Date.now() / 1000;
-      if (payload.exp < now) {
-        console.log("Token expired");
-        return false;
-      }
-    }
-    
-    // Check if user_id exists
-    if (!payload.user_id) {
-      console.log("No user_id in token");
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error("Token validation error:", error);
+// Check if user has a valid user_id from Diploma Collective membership
+function isUserIdValid(userId: string | null): boolean {
+  if (!userId) return false;
+  
+  // Check it's not empty and not the placeholder shortcode
+  if (userId.trim() === '' || userId === '[econgraph_link]') {
+    console.log("Invalid user_id: empty or placeholder");
     return false;
   }
+  
+  console.log("Valid user_id found:", userId);
+  return true;
 }
 
 type ElasticityType = 'unitary' | 'relatively-elastic' | 'relatively-inelastic' | 'perfectly-elastic' | 'perfectly-inelastic';
@@ -74,16 +56,15 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
   onUpdateSettings,
   mounted
 }, ref) => {
-  // Token verification state
-  const [hasValidToken, setHasValidToken] = useState(false);
+  // User authentication state
+  const [hasValidUser, setHasValidUser] = useState(false);
   
-  // Check for valid token on mount
+  // Check for valid user_id on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('auth_token');
-      if (token) {
-        setHasValidToken(isTokenValid(token));
-      }
+      const userId = localStorage.getItem('auth_user_id');
+      console.log("Checking auth_user_id from localStorage:", userId);
+      setHasValidUser(isUserIdValid(userId));
     }
   }, []);
   
@@ -4256,12 +4237,12 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
       return;
     }
 
-    // Check if user has a valid token (from state, updated on mount)
-    console.log("Token validation result:", { hasValidToken });
+    // Check if user has a valid user_id (from Diploma Collective membership)
+    console.log("User validation result:", { hasValidUser });
 
-    // User must have a valid token to download without watermark
-    if (!hasValidToken) {
-      console.log("No valid token, showing payment dialog");
+    // User must have a valid user_id to download without watermark
+    if (!hasValidUser) {
+      console.log("No valid user_id, showing payment dialog");
       setShowPaymentDialog(true);
       return;
     }
