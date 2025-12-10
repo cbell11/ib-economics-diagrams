@@ -18,7 +18,7 @@
     "firebase": "^11.4.0",
     "jsonwebtoken": "^9.0.2",
     "konva": "^9.3.19",
-    "next": "15.3.3",
+    "next": "15.3.6",
     "openai": "^4.87.3",
     "prisma": "^6.5.0",
     "react": "^19.0.0",
@@ -36,7 +36,7 @@
     "@types/react": "19.2.7",
     "@types/react-dom": "^19.2.0",
     "eslint": "^9",
-    "eslint-config-next": "15.3.3",
+    "eslint-config-next": "15.3.6",
     "tailwindcss": "^4",
     "typescript": "5.8.2"
   }
