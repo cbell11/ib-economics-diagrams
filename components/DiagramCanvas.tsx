@@ -6082,12 +6082,20 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               Create and save <strong>UNLIMITED</strong> diagrams using EconGraph Pro. No hidden costs or extra charges.
             </p>
             <p style={{
-              marginBottom: '2rem',
+              marginBottom: '0.5rem',
               color: '#40b36e',
               fontSize: '1.5rem',
               fontWeight: 'bold'
             }}>
-              Just $20 for an entire year.
+              Unlock for $1.50 monthly
+            </p>
+            <p style={{
+              marginBottom: '2rem',
+              color: '#6b7280',
+              fontSize: '0.95rem',
+              fontStyle: 'italic'
+            }}>
+              <strong>that&apos;s less than a coffee</strong>
             </p>
             
             <a
