@@ -6087,7 +6087,7 @@ const DiagramCanvas = forwardRef<DiagramCanvasRef, DiagramCanvasProps>(({
               fontSize: '1.5rem',
               fontWeight: 'bold'
             }}>
-              Unlock for $1.50 monthly
+              Unlock for $1.66 monthly
             </p>
             <p style={{
               marginBottom: '2rem',
